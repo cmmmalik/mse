@@ -1,1 +1,1 @@
-# Simtools
+# Material simulation environment
