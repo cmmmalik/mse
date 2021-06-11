@@ -144,7 +144,7 @@ class Optimize:
             conv = self.relax()
             return conv
 
-        if self.cycle:
+        if self.cycle: #cycle over the steps over and over again, till convergence is achieved.
             generator = itcycle(self.steps)
         else:
             generator = self.steps
