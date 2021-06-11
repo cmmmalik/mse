@@ -10,7 +10,7 @@ from functools import partial
 from os import path
 from gpaw import GPAW, PW, FermiDirac
 
-from Simtools.calculator.ase import getnewcalc, setmodecalc
+from mse.calculator.ase import getnewcalc, setmodecalc
 
 parprint = partial(parprint, flush=True)
 

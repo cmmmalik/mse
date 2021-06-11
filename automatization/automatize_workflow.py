@@ -6,9 +6,9 @@ from pymatgen.io.ase import AseAtomsAdaptor
 
 from database_utilities import get_rows_db
 from preprocessing.atoms import Pycomp
-from Simtools.analysis.symmetry import get_symmetry_kp_gamma
-from Simtools.ext.materials_project import get_entries as matentries
-from Simtools.workflows.kpts_new import Workflow as KPworkflow
+from mse.analysis.symmetry import get_symmetry_kp_gamma
+from mse.ext.materials_project import get_entries as matentries
+from mse.workflows.kpts_new import Workflow as KPworkflow
 
 
 class Automatized_worker:

@@ -9,12 +9,12 @@ import warnings
 
 from Database.ase_db import Savedb
 from Database.ASE_io import Gpawjobdb_read, Gpaw_read
-from Simtools.Jobs.Gpaw import Gpaw as Gpawjob
-from Simtools.wrapper.gpaw_wrap import generate_runcmd
-from Simtools.optimizer.optimizer import Optimize, Moptimize
-from Simtools.system.directory import CD
-from Simtools.io.gpaw_io import Readparameters
-from Simtools.analysis.energies import energy_per_atom as simenergy_per_atom, \
+from mse.Jobs.Gpaw import Gpaw as Gpawjob
+from mse.wrapper.gpaw_wrap import generate_runcmd
+from mse.optimizer.optimizer import Optimize, Moptimize
+from mse.system.directory import CD
+from mse.io.gpaw_io import Readparameters
+from mse.analysis.energies import energy_per_atom as simenergy_per_atom, \
     energy_per_formula as simenergy_per_formula
 from HPCtools_v2.hpc_tools3 import filterargs, directorychange
 

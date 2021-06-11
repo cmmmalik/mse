@@ -2,9 +2,9 @@ from ase.atoms import Atoms as aseatoms
 from ase.db import row
 
 
-from Simtools.analysis.aserows import get_calc_parameters, get_args
-from Simtools.workflows.relaxation_scheme import Workflow_relaxation
-from Simtools.workflows.base import Baseworkflow
+from mse.analysis.aserows import get_calc_parameters, get_args
+from mse.workflows.relaxation_scheme import Workflow_relaxation
+from mse.workflows.base import Baseworkflow
 
 import warnings
 

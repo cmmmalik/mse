@@ -1,7 +1,7 @@
 import warnings
 import re
 
-from Simtools.parser.Parse import list_dict,  parse_type_json
+from mse.parser.Parse import list_dict,  parse_type_json
 
 
 class FormatException(Exception):

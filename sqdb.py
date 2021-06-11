@@ -1,7 +1,7 @@
 import os
 import datetime
 
-from Simtools.Jobs.job import Corejob
+from mse.Jobs.job import Corejob
 from Database.sqlite.sqlite import Job_sqlite
 
 filename = os.path.expanduser("~/.HPCtools/Sim.db")

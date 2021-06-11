@@ -6,8 +6,8 @@ import numpy as np
 import os
 import warnings
 
-from Simtools.calculator.gpaw_calc import Gpaw
-from Simtools.Jobs.job import HPCjob
+from mse.calculator.gpaw_calc import Gpaw
+from mse.Jobs.job import HPCjob
 # TODO: Implement proper Workflow classes (Next steps); Below is just a proof of concept
 
 

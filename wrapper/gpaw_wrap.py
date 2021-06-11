@@ -8,7 +8,7 @@ from functools import partial
 import traceback
 import sys
 
-from Simtools.servertools.Slurm import putback_origin
+from mse.servertools.Slurm import putback_origin
 from HPCtools_v2.hpc_tools3 import HPCMain
 
 parprint = partial(aseparprint, flush=True) # flush the buffers

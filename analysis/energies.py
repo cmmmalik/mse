@@ -3,7 +3,7 @@ from ase.db.row import AtomsRow
 from pymatgen.core.composition import Composition as Pymatcomposition
 import warnings
 
-from Simtools.database_utilities import Search as dbsearch
+from mse.database_utilities import Search as dbsearch
 from preprocessing.atoms import Aatoms
 
 # Do the analysis(make it ready for the next step)  on or of energies-related quantities

@@ -4,7 +4,7 @@ import sys
 import pickle
 import traceback
 
-from Simtools.wrapper.wrap import savetodb, parprint, print, autosendback
+from mse.wrapper.wrap import savetodb, parprint, print, autosendback
 
 
 def generate_runcmd(inputfile,

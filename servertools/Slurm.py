@@ -3,7 +3,7 @@ import os
 import sys
 import traceback
 import time
-from Simtools.servertools.ssh import ShellHandler
+from mse.servertools.ssh import ShellHandler
 import warnings
 
 from HPCtools_v2.IO import Logger
@@ -180,7 +180,7 @@ def commandlineargs():
 
 def main():
 
-    from Simtools.Jobs.job import HPCjob
+    from mse.Jobs.job import HPCjob
     sys.stdout.write("Fetching back")
     sys.stdout.flush()
 

@@ -1,7 +1,7 @@
 from ase.atoms import Atoms
 
-from Simtools.workflows.base import Baseworkflow
-from Simtools.optimizer.optimizer import Moptimize
+from mse.workflows.base import Baseworkflow
+from mse.optimizer.optimizer import Moptimize
 
 
 class Workflow_relaxation(Baseworkflow):

@@ -7,9 +7,9 @@ import traceback
 import warnings
 
 from Database.ase_db import Savedb
-from Simtools.Jobs.job import ASEjob, HPCjob
-from Simtools.io.scripts import InterfaceGPAW
-import Simtools.system.directory as Simdirec
+from mse.Jobs.job import ASEjob, HPCjob
+from mse.io.scripts import InterfaceGPAW
+import mse.system.directory as Simdirec
 from HPCtools_v2.hpc_tools3 import directorychange
 
 # TODO: Implement JOBsets

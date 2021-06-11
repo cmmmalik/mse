@@ -2,9 +2,9 @@ from ase.atoms import Atoms
 from ase.spacegroup.symmetrize import check_symmetry, refine_symmetry
 import os
 
-from Simtools.calculator.gpaw_calc import Gpaw
-from Simtools.calculator.vasp_calc import VASP
-from Simtools.Jobs.job import HPCjob
+from mse.calculator.gpaw_calc import Gpaw
+from mse.calculator.vasp_calc import VASP
+from mse.Jobs.job import HPCjob
 
 
 class Baseworkflow:

@@ -12,7 +12,7 @@ from typing import Any
 import warnings
 
 
-from Simtools.system import directory
+from mse.system import directory
 from Database.ASE_io import Gpawjobdb_read
 import HPCtools_v2.hpc_tools3 as HPC
 

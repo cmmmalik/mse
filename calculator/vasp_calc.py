@@ -12,15 +12,15 @@ import warnings
 
 from Database.ase_db import Savedb
 from Database.ASE_io import Gpaw_read
-from Simtools.system.directory import CD
-from Simtools.Jobs.job import ASEjob
+from mse.system.directory import CD
+from mse.Jobs.job import ASEjob
 from Database.ASE_io import Gpawjobdb_read
-from Simtools.analysis.energies import energy_per_atom as simenergy_per_atom, \
+from mse.analysis.energies import energy_per_atom as simenergy_per_atom, \
     energy_per_formula as simenergy_per_formula
-from Simtools.calc_utilities import get_kpoints_from_density
-from Simtools.system.directory import directorychange
-from Simtools.wrapper.vasp_wrap import generate_runcmd
-from Simtools.utilities import sort_formula_string
+from mse.calc_utilities import get_kpoints_from_density
+from mse.system.directory import directorychange
+from mse.wrapper.vasp_wrap import generate_runcmd
+from mse.utilities import sort_formula_string
 from HPCtools_v2.hpc_tools3 import filterargs
 
 # TODO: ions, cell, full relaxation in a single job/job factory

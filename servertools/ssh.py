@@ -1,7 +1,7 @@
 import paramiko
 import re
 import warnings
-from Simtools.system.directory import Directory
+from mse.system.directory import Directory
 import stat
 import os
 

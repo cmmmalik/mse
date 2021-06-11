@@ -3,8 +3,8 @@ from itertools import cycle as itcycle
 from typing import Iterable
 import warnings
 
-from Simtools.calculator.ase import getnewcalc, setmodecalc
-from Simtools.optimizer.gpaw_functions import get_dedecut as gget_dedecut, optimize as goptimize
+from mse.calculator.ase import getnewcalc, setmodecalc
+from mse.optimizer.gpaw_functions import get_dedecut as gget_dedecut, optimize as goptimize
 
 
 # TODO: test this.

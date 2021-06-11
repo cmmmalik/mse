@@ -8,7 +8,7 @@ import subprocess
 import sys
 import warnings
 
-from Simtools.io.scripts import InterfaceGPAW as itfgpaw
+from mse.io.scripts import InterfaceGPAW as itfgpaw
 
 init(autoreset=True)
 
