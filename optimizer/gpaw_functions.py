@@ -235,8 +235,8 @@ def get_dedecut(atoms,
     dedecut = round(dedecut, decimtol)
 
     if verbose:
-        parprint("energy at two different cutoffs", e, flush=True)
-        parprint("pulaty correction is %s" % dedecut, flush=True)
+        parprint("energy at two different cutoffs: {}".format(e), flush=True)
+        parprint("pulay stress correction is {}".format(dedecut), flush=True)
 
     return dedecut
 
