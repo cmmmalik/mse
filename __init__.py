@@ -1,2 +1,2 @@
-__name__ = "Simtools"
-__version__ = 1.0
+__name__ = "mse"
+__version__ = 0.0
