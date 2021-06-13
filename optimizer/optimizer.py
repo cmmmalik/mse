@@ -35,10 +35,10 @@ class Optimize:
 
         aargs = self.allowed_args()
 
-        for k in kwargs:
-            if k not in aargs:
-                display = ",".join(aargs)
-                raise ValueError(f"Invalid keyword argument {k}, allowed arguments are {display}")
+#        for k in kwargs:
+#            if k not in aargs:
+#                display = ",".join(aargs)
+#                raise ValueError(f"Invalid keyword argument {k}, allowed arguments are {display}")
 
         self.steps = kwargs.get("steps", None)
         upde = None
@@ -48,8 +48,8 @@ class Optimize:
         self._update_dedecut = kwargs.get("update_dedecut", upde)
         self.cycle = kwargs.get("cycle", False)
 
-        for k in self.parameters.keys():
-            self.parameters[k] = kwargs.get(k, self.parameters[k])
+        for k, v in self.parameters.items():
+            self.parameters[k] = kwargs.get(k, v)
 
     @classmethod
     def allowed_args(cls):
