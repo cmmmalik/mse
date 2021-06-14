@@ -14,7 +14,7 @@ import warnings
 
 from mse.system import directory
 from Database.ASE_io import Gpawjobdb_read
-import HPCtools_v2.hpc_tools3 as HPC
+import HPCtools.hpc_tools3 as HPC
 
 # TODO: add function for cleaning the contents of the directory instead of the directory itself.
 

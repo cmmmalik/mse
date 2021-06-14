@@ -9,7 +9,7 @@ import traceback
 import sys
 
 from mse.servertools.Slurm import putback_origin
-from HPCtools_v2.hpc_tools3 import HPCMain
+from HPCtools.hpc_tools3 import HPCMain
 
 parprint = partial(aseparprint, flush=True) # flush the buffers
 print = partial(print, flush=True)

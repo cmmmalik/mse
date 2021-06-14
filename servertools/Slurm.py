@@ -6,7 +6,7 @@ import time
 from mse.servertools.ssh import ShellHandler
 import warnings
 
-from HPCtools_v2.IO import Logger
+from HPCtools.IO import Logger
 
 
 def wrap_path(wraper="gpaw_wrap", host=None):

@@ -21,7 +21,7 @@ from mse.calc_utilities import get_kpoints_from_density
 from mse.system.directory import directorychange
 from mse.wrapper.vasp_wrap import generate_runcmd
 from mse.utilities import sort_formula_string
-from HPCtools_v2.hpc_tools3 import filterargs
+from HPCtools.hpc_tools3 import filterargs
 
 # TODO: ions, cell, full relaxation in a single job/job factory
 # TODO: create job factory that can do ions, cell, full relaxations

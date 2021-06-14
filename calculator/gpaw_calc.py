@@ -16,7 +16,7 @@ from mse.system.directory import CD
 from mse.io.gpaw_io import Readparameters
 from mse.analysis.energies import energy_per_atom as simenergy_per_atom, \
     energy_per_formula as simenergy_per_formula
-from HPCtools_v2.hpc_tools3 import filterargs, directorychange
+from HPCtools.hpc_tools3 import filterargs, directorychange
 
 # TODO: add relaxation schemes
 # TODO: Add save_to_database function with columns keys of parameters. (See Gpawjob class and ase_db/ASE_IO)
