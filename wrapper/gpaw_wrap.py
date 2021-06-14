@@ -24,7 +24,7 @@ def generate_runcmd(inputfile,
                     remove: bool = True,
                     envcmd: bool = None):
 
-    loc = "Simtools.wrapper.gpaw_wrap"
+    loc = "mse.wrapper.gpaw_wrap"
     runcmd = "mpirun gpaw python -m {}".format(loc)
     runcmd += " -pf {}".format(inputfile)
     runcmd += " --savecalc {}".format(save_calc)

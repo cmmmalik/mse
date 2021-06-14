@@ -14,7 +14,7 @@ def generate_runcmd(inputfile,
                     remove: bool = True,
                     envcmd: bool = None):
 
-    loc = "Simtools.wrapper.vasp_wrap"
+    loc = "mse.wrapper.vasp_wrap"
     runcmd = "python -m {}".format(loc)
     runcmd += " -pf {}".format(inputfile)
     runcmd += " --savecalc {}".format(save_calc)
