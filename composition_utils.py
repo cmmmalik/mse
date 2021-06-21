@@ -1,4 +1,105 @@
-from preprocessing.atoms import Composition
+import re
+import warnings
+
+from pymatgen.core.composition import Composition
+from pymatgen.core.periodic_table import Element
+
+from mse.utilities import replace_1_string
+
+
+class EnhancedComposition(Composition):
+
+    @property
+    def iupac_formula(self):
+        formula = super().iupac_formula
+        formula = formula.replace(" ", "")
+        return formula
+
+    @property
+    def refined_iupac_formula(self):
+
+        formula = self.iupac_formula
+        formula = replace_1_string(formula)
+        return formula
+
+    def get_withoutel_iupac_formula(self, el):
+
+        formula = self.iupac_formula
+        formula = re.sub(el + "\d*\.?\d*", "", formula)
+        return formula
+
+    def get_Ael(self):
+
+        """Get the A atom"""
+
+        try:
+
+            return self._Ael
+
+        except AttributeError:
+
+            groupA = [Element.from_row_and_group(i, 13).symbol for i in range(2, 7)]
+
+            els = [i.symbol for i in self.keys() if i.symbol in groupA]
+
+            if len(els) > 1:
+
+                warnings.warn("More than one A element was found")
+            else:
+                els = els[0]
+
+            self.Ael = els
+
+            return els
+
+    @property
+    def Ael(self):
+        return self._Ael
+
+    @Ael.setter
+    def Ael(self, value):
+        self._Ael = value
+
+    def select_elements_type(self, selection):
+
+        if selection == "transition_metal" or selection == "M":
+
+            return [i.symbol for i in self.keys() if i.is_transition_metal or i.is_lanthanoid or i.is_actinoid]
+
+        elif selection == "GroupA" or selection == "A":
+
+            return [i.symbol for i in self.keys() if i.is_post_transition_metal]
+
+        elif selection == "X":
+
+            return [i.symbol for i in self.keys() if i.symbol in ["C", "N"]]
+
+        elif selection == "T":
+
+            return [i.symbol for i in self.keys() if i.symbol in ["F", "Cl", "H", "OH", "O"]]
+
+        else:
+
+            raise ValueError("Unknown selection keyword")
+
+    def get_mappings(self):
+        """ returns dictionary containing mappings of M,A,X as keys to individual elements in the composition """
+        return {i: ' '.join(self.select_elements_type(selection=i)) for i in ["M", "A", "X"]}
+
+    @staticmethod
+    def remove_brackets(st):
+        from collections import Counter
+        dict = Counter(st)
+        if dict["("] == dict[")"]:
+            pass
+        else:
+            raise ValueError("{} contains unequal number of '(' and ')'".format(st))
+        if not dict["("] == 1:
+            raise ValueError(" cannot handle nested brackets")
+
+        b = st.find("(")
+        e = st.find(")")
+        return st[b + 1, e]
 
 
 class MAXcomp:
@@ -17,7 +118,7 @@ class MAXcomp:
     @formula.setter
     def formula(self, formula):
         self._formula = formula
-        self._comp = Composition(formula)
+        self._comp = EnhancedComposition(formula)
 
     @property
     def maxelements(self):
