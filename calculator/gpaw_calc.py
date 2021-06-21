@@ -21,8 +21,10 @@ from HPCtools.hpc_tools3 import filterargs, directorychange
 # TODO: add relaxation schemes
 # TODO: Add save_to_database function with columns keys of parameters. (See Gpawjob class and ase_db/ASE_IO)
 
+
 class PickleReadError(Exception):
     pass
+
 
 class Gpaw(Gpawjob):
 
@@ -186,8 +188,8 @@ class Gpaw(Gpawjob):
         try:
             with open(filename, "rb") as f:
                 job = pickle.load(f)
-        except Exception:
-            raise PickleReadError("Unable to pickle the job")
+        except Exception as error:
+            raise PickleReadError("Unable to pickle the job") from error
 
         try:
             filename = cls.defaults_files["calc"]
