@@ -108,7 +108,7 @@ class MAXcomp:
 
         self._comp = None
         self.formula = formula
-        if not self.check_max:
+        if not self.check_max():
             raise ValueError("Expected MAX phase composition, but got non-MAX composition".format(self.comp.iupac_formula))
 
     @property
