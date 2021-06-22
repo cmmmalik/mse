@@ -68,11 +68,11 @@ class EnhancedComposition(Composition):
 
         elif selection == "GroupA" or selection == "A":
 
-            return [i.symbol for i in self.keys() if i.is_post_transition_metal]
+            return [i.symbol for i in self.keys() if i.is_post_transition_metal or i.group in range(13, 17) and i.row > 2]
 
         elif selection == "X":
 
-            return [i.symbol for i in self.keys() if i.symbol in ["C", "N"]]
+            return [i.symbol for i in self.keys() if i.symbol in ["C", "N"] or i.row == 2 and i.group > 12]
 
         elif selection == "T":
 
@@ -174,3 +174,8 @@ def generate_MAX_formulas(M : list or tuple = ["Ti"],
     formulas = {}
     formulas = {"{}-{}-{}".format(m, a, x): generate_MAX_formula(M=m, A=a, X=x, n=n) for m in M for a in A for x in X}
     return formulas
+
+
+def get_elements_periodic_table(group: list, row: list):
+    R = [Element.from_row_and_group(row=r, group=g).symbol for r in row for g in group]
+    return R
