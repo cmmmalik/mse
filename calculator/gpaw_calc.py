@@ -115,8 +115,8 @@ class Gpaw(Gpawjob):
 
         out = {"calc_args": {"kpts": {"density": 4, "gamma": True},
                                          "xc": "PBE",
-                                         "eigensolver": "rmm-diis",
-                                         "occupations": {"name": "fermi-dirac", "width": 0.4}},
+                                         "eigensolver": "rmm-diis",},
+                                #         "occupations": {"name": "fermi-dirac", "width": 0.4}}, # default smearing
                            "mode_args": {"encut": 500}}
         return out
 
