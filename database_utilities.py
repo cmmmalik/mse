@@ -1,5 +1,7 @@
-from ase.db import connect, core as dBcore
 import os
+
+from ase.db import connect
+from ase.db.core import Database as dBcore
 from collections import Iterable
 
 from preprocessing.atoms import Composition as Pycomp
