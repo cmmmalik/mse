@@ -264,10 +264,10 @@ class ASEjob(Corejob):
         return rows
 
     @staticmethod
-    def _smartwriteasedb(db: str or dbCore, row, data, keys):
+    def _smartwriteasedb(db: str or dbCore, row, data: dict = {}, keys: dict = {}, **kwargs):
 
         if isinstance(db, dbCore):
-            db.write(row, data=data, **keys)
+            db.write(row, data=data, key_value_pairs=keys, **kwargs)
         else:
             with asedbconnect(db) as mydb:
                 mydb.write(row, data=data, **keys)
