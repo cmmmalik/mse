@@ -1,7 +1,10 @@
-
+import os
+import sys
 
 from ase import Atoms
+from ase.io import read as aseread
 from ase.db.core import Database as DBcore
+from ase.db import connect
 from ase.parallel import paropen, parprint
 import numpy as np
 import json
@@ -10,6 +13,9 @@ import pickle
 from mse.calculator.gpaw_calc import Gpaw
 from mse.wrapper.gpaw_wrap import initialize_calc, savetodb
 from mse.system.directory import directorychange
+from mse.analysis.energies import energy_per_atom as get_energy_per_atom, energy_per_formula as get_energy_per_formula
+from Database.ASE_io import Gpawjobdb_read
+from Database.ase_db import Savedb
 
 
 class Smearingworkflow:
@@ -147,11 +153,58 @@ class Smearingworkflow:
             if self.verbosity >=1:
                 parprint('Iteration No. : {}'.format(i), flush=True)  # only master
             calc.set(occupations={"name": self.smearingname, "width": width})
-            job.static_run()
-            ### here do the saving, before moving forward
+            job.static_run() # ask calculator of the job to do the calculation.
+            ### here do the logging, before moving forward
             with paropen("output.log", "a+") as ff:
                 ff.write("{:>12} {:>12} {:>12}".format(i, width, job.atoms.get_potential_energy()))
-            savetodb(job)
+            #add parameters
+            keys = dict()
+            keys["smearing_name"] = self.smearingname
+            keys["width"] = width
+            keys.update(self._genkeys(params=calc.parameters.copy()))
+            data, _keys = self._gendata()
+            keys.update(_keys)
+            keys.update({"energy_per_atom" : get_energy_per_atom(atoms=job.atoms),
+                        "energy_per_formula": get_energy_per_formula(atoms=job.atoms)})
+
+            savetodb(job, data=data, **keys) #save to ase db row on master node only
+
+
+    def _genkeys(self, params: dict ):
+        keys = {}
+        mode = params.get("mode")
+        keys["encut"] = mode.get("ecut") if isinstance(mode, dict) else mode.todict().get("ecut")
+        keys.update(Gpawjobdb_read.get_keys_asedb(params))
+
+        try:
+            keys.update(self.job._addkpdens_kpts(keys=keys))
+        except AttributeError:
+            pass
+        return keys
+
+
+    def _gendata(self):
+
+        data = dict()
+        keys = dict()
+
+        init_poscar = Savedb.find_poscar(directory=".")
+        if isinstance(init_poscar, list):
+            init_poscar = init_poscar[0]
+        if not init_poscar:
+            init_poscar = self.job.inputs["calc_args"]["txt"]
+        try:
+            init_atoms = aseread(init_poscar, index=0)
+        except OSError:
+            init_atoms = None
+        #fill in
+        if init_atoms:
+            data["init_atoms"] = True
+            keys["poscarname"] = init_poscar
+            keys["init_poscar"] = True
+
+        return data, keys
+
 
     def _finalize(self):
         self.job = None
@@ -169,7 +222,7 @@ class Smearingworkflow:
         _jattrs = copydct.pop("_jattr", None)
         run_type = _jattrs.pop("run_type", None)
 
-        obj = Smearingworkflow(atoms=atoms,**copydct, **_jattrs)
+        obj = Smearingworkflow(atoms=atoms, **copydct, **_jattrs)
         if run_type:
             obj._jattr["run_type"] = run_type
         if _outputs:
@@ -182,13 +235,15 @@ class Smearingworkflow:
         if not filename:
             filename = "out.p"
         unable_topick = False
-        if use_pickle == True:
+
+        if use_pickle:
             try:
                 with open(filename, "rb") as f:
                     obj = pickle.load(f)
             except OSError:
                 print("Can't pickle the job, looking for .json file")
                 unable_topick = True
+
         if not use_pickle or unable_topick:
             with open("{}.json".format(filename.rsplit(".", maxsplit=1)[0]), "rb") as jf:
                 dct = pickle.load(jf)
@@ -196,6 +251,45 @@ class Smearingworkflow:
 
         return obj
 
+    def read_rows(self):
+        paths = os.path.join(self._jattr["working_directory"],"out.db")
+        with connect(paths) as db:
+            rows = [r for r in db.select()]
+        return rows
 
-    def add_to_ase_database(self, db: str or DBcore, **externalkeys):
-        pass
+    def add_to_ase_database(self, db: str or DBcore,add_extra_keys: bool = True, **externalkeys):
+        rows = self.read_rows()
+
+        if not rows:
+            raise ValueError("Unable to read rows, can't proceed further")
+        if add_extra_keys:
+            keys = self._rowget_keys()
+        else:
+            keys = dict()
+
+        if isinstance(db, str):
+            db = connect(db)
+        try:
+            db.__enter__()
+            for r in rows:
+                db.write(r, key_value_pairs=keys, **externalkeys)
+        finally:
+            exc_type, exc_value, tb = sys.exc_info()
+            db.__exit__(exc_type, exc_value, tb)
+
+# safe exit
+
+    def _rowget_keys(self):
+        keys = dict()
+        #paths here
+        asepath = os.path.join(self._jattr["working_directory"], "out.db")
+        jobpath = os.path.join(self._jattr["working_directory"], "out.p")
+
+        if os.path.exists(jobpath):
+            keys["jobpath"] = jobpath
+
+        if os.path.exists(asepath):
+            keys["asepath"] = asepath
+        keys["working_directory"] = self._jattr["working_directory"]
+        return keys
+
