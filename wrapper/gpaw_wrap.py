@@ -146,13 +146,13 @@ def autosendback(remove:bool, backup:bool, envcmd:str, verbosity:int=0):
     world.barrier()  # wait for the master to finish.
 
 
-def savetodb(job):
+def savetodb(job, *args, **kwargs):
 
     if world.rank == 0: # write only with master
         # with asedbconnect("out.db") as mydb:
         #     mydb.write(job.atoms)
     # parprint("Successfully written into the database")
-        job._savetodb()
+        job._savetodb(*args, **kwargs)
 
 
 def main():
