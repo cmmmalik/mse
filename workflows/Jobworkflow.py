@@ -14,11 +14,12 @@ from mse.calculator.gpaw_calc import Gpaw
 from mse.wrapper.gpaw_wrap import initialize_calc, savetodb
 from mse.system.directory import directorychange
 from mse.analysis.energies import energy_per_atom as get_energy_per_atom, energy_per_formula as get_energy_per_formula
+from mse.Jobs.job import ASEjob
 from Database.ASE_io import Gpawjobdb_read
 from Database.ase_db import Savedb
 
 
-class Smearingworkflow:
+class Smearingworkflow(ASEjob):
 
     """
     A basic workflow that will perform smearing study using a calculator job i.e. gpaw or vasp (at the moment).
@@ -69,6 +70,7 @@ class Smearingworkflow:
         self._calc_type = calc_type
 
         self.verbosity = verbosity
+        super(Smearingworkflow, self).__init__(name=name, working_directory=working_directory, atoms=atoms)
         self.atoms = atoms
 
         # job attributes, that will be used to initialze and run the job
@@ -169,7 +171,6 @@ class Smearingworkflow:
 
             savetodb(job, data=data, **keys) #save to ase db row on master node only
 
-
     def _genkeys(self, params: dict ):
         keys = {}
         mode = params.get("mode")
@@ -181,7 +182,6 @@ class Smearingworkflow:
         except AttributeError:
             pass
         return keys
-
 
     def _gendata(self):
 
@@ -205,13 +205,12 @@ class Smearingworkflow:
 
         return data, keys
 
-
     def _finalize(self):
         self.job = None
-        with paropen("out.p", "wb") as f:
-            pickle.dump(self, f)
-        with open("out.json") as ff:
-            json.dump(self.todict(), ff)
+        # with paropen("out.p", "wb") as f:
+        #     pickle.dump(self, f)
+        self.save()
+
 
     @staticmethod
     def fromdict(dct):
@@ -292,4 +291,14 @@ class Smearingworkflow:
             keys["asepath"] = asepath
         keys["working_directory"] = self._jattr["working_directory"]
         return keys
+
+    def save(self):
+        with open(os.path.join(self.working_directory, "out.p"), "wb") as f:
+            pickle.dump(self, f)
+
+        with open("out.json") as ff:
+            json.dump(self.todict(), ff)
+
+    def initialize(self):
+        super(Smearingworkflow, self).initialize()
 

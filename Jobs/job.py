@@ -302,6 +302,11 @@ class ASEjob(Corejob):
         self.hpc = hpc
         return hpc
 
+    def initialize(self):
+        if not os.path.exists(self.working_directory):
+            super(ASEjob, self).initialize()
+        self.structure_write(filename=os.path.join(self.working_directory, "POSCAR"))
+
 
 class HPCjob:
 
