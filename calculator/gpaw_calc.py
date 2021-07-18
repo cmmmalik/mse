@@ -273,9 +273,9 @@ class Gpaw(Gpawjob):
         with open(self.defaults_files["input"], "wb") as f:
             pickle.dump(self, f)
 
-    def _savetodb(self):
+    def _savetodb(self, *args, **kwargs):
         with asedbconnect(self.asedbname) as mydb:
-            mydb.write(self.atoms)
+            mydb.write(self.atoms, *args, **kwargs)
         print("Successfully written into the database")
 
     def _dirchanger(self):
@@ -355,7 +355,7 @@ class Gpaw(Gpawjob):
         print("Row:\n{}".format(row))
         self._smartwriteasedb(db, row=row, data=data, keys=keys)
 
-    def _smartwriteasedb(self, db: str or dbCore, row, data, keys):
+    def _smartwriteasedb(self, db: str or dbCore, row, data: dict = {}, keys: dict = {}):
         try:
             db.write(row, data=data, **keys)
         except (AttributeError, IOError) as e:
