@@ -456,7 +456,7 @@ class Gpaw(Gpawjob):
     @staticmethod
     def _addkpdens_kpts(keys: dict):
 
-        kpts = keys.pop("kpts")
+        kpts = keys.pop("kpts", None)
 
         out = {}
         if not kpts:
