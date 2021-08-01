@@ -40,7 +40,11 @@ class Readparameters:
 
                 elif line.startswith("Occupation numbers:"): #Sometimes, we don't have this line, in case of default,
                     #written after wavefunction info
-                    nxtline = txtfile.__next__()
+                    if line.endswith("numbers:"):
+                        nxtline = txtfile.__next__()
+                    else:
+                        nxtline = line
+
                     nxtline = nxtline.strip().split(":", maxsplit=1)
                     # if self.parameters is None:
                     #     self.parameters = {}
