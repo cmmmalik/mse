@@ -224,7 +224,7 @@ class VASP(ASEjob):
         # read_row
         try:
             row = cls.ase_row_db(db=cls.asedbname)
-            atoms = row.toatom(False)
+            atoms = row.toatoms(False)
             print("Atoms read from the ase row")
             calc = row.calc
         except FileNotFoundError:
