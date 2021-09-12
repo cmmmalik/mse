@@ -38,13 +38,13 @@ class Smearingworkflow(ASEjob):
                  widthlimits: [int, int] = None,
                  calcinps: dict = None,
                  modeinps: dict = None,
-                 verbosity: int=1,
+                 verbosity: int = 1,
                  **kwargs,
                  ):
 
         assert widthlst or widthlimits
         self._job = None
-        self._smearing = None
+        self._smearingname = None
         self.smearingname = smearing_name
         self._logfile = "output.log"
         self._atoms = None
@@ -86,13 +86,13 @@ class Smearingworkflow(ASEjob):
         self._jattr = jobattributes
 
     @property
-    def smearing_name(self):
-        return self._smearing_name
+    def smearingname(self):
+        return self._smearingname
 
-    @smearing_name.setter
-    def smearing_name(self, name:str):
+    @smearingname.setter
+    def smearingname(self, name: str):
         if name in ["fermi"]:
-            self._smearing = name
+            self._smearingname = name
 
     def todict(self):
         dct = {}
@@ -152,7 +152,7 @@ class Smearingworkflow(ASEjob):
         calc = job.atoms.calc
 
         for i, width in enumerate(self._widths):
-            if self.verbosity >=1:
+            if self.verbosity >= 1:
                 parprint('Iteration No. : {}'.format(i), flush=True)  # only master
             calc.set(occupations={"name": self.smearingname, "width": width})
             job.static_run() # ask calculator of the job to do the calculation.
@@ -206,7 +206,7 @@ class Smearingworkflow(ASEjob):
         return data, keys
 
     def _finalize(self):
-        self.job = None
+        self._job = None
         # with paropen("out.p", "wb") as f:
         #     pickle.dump(self, f)
         self.save()
