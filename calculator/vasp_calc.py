@@ -27,6 +27,8 @@ from HPCtools.hpc_tools3 import filterargs
 # TODO: create job factory that can do ions, cell, full relaxations
 # TODO: implement dictionary_to, dictionary_from method, for json support.(pickle may fail)
 
+class PickleReadError(Exception):
+    pass
 
 class VASP(ASEjob):
 
@@ -214,25 +216,36 @@ class VASP(ASEjob):
         try:
             with open(filename, "rb") as f:
                 job = pickle.load(f)
-        except OSError:
-            warnings.warn("Could not read the {}, either it does not exist or un-readable, "
-                          "reading input file {}".format(filename, cls.default_files["input"]))
-            with open(cls.default_files["input"], "rb") as f:
-                job = pickle.load(f)
+        except Exception as error:
+    #       warnings.warn("Could not read the {}, either it does not exist or un-readable, "
+    #                      "reading input file {}".format(filename, cls.default_files["input"]))
+            raise PickleReadError("Unable to unpickle the job") from error
 
         # read_row
-        row = cls.read_row(verbosity=verbosity)
-        if row:
-            job._row = row
-        # update atoms
-        atoms = cls.read_atoms()
-        if atoms:
-            job.atoms = atoms
-        # read_calculator
+        try:
+            row = cls.ase_row_db()
+            atoms = row.toatom(False)
+            print("Atoms read from the ase row")
+            calc = row.calc
+        except FileNotFoundError:
+            warnings.warn("Ase db file '{}' does not exist".format(cls.asedbname))
+            warnings.warn("Either ask calculator for the output parameters i.e. energies, forces or, if present,"
+                  ".txt file will be read ")
+            row = None
+            try:
+                atoms = aseread("OUTPUT")  # reading only the last configuration
+                print("Atoms read from OUTPUT file")
+            except (IOError, OSError, IndexError) as ex:
+                warnings.warn("Invalid/empty file: '{}'".format("OUTPUT"))
+                raise ex
 
-        if not job.vaspcalc:
-            calc = asevaspcalc(restart=True)
-            job._calc = calc
+
+        job.atoms = atoms
+        job.row = row
+
+ #       if not job.vaspcalc:
+ #           calc = asevaspcalc(restart=True)
+ #           job._calc = calc
 
         return job
 
