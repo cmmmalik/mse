@@ -226,7 +226,6 @@ class VASP(ASEjob):
             row = cls.ase_row_db(db=cls.asedbname)
             atoms = row.toatoms(False)
             print("Atoms read from the ase row")
-            calc = row.calc
         except FileNotFoundError:
             warnings.warn("Ase db file '{}' does not exist".format(cls.asedbname))
             warnings.warn("Either ask calculator for the output parameters i.e. energies, forces or, if present,"
@@ -238,7 +237,6 @@ class VASP(ASEjob):
             except (IOError, OSError, IndexError) as ex:
                 warnings.warn("Invalid/empty file: '{}'".format("OUTPUT"))
                 raise ex
-
 
         job.atoms = atoms
         job.row = row
