@@ -155,6 +155,21 @@ class MAXcomp:
         return quan[mapp["X"]]
 
 
+class UnconvMAX(MAXcomp):
+
+    def __init__(self, formula:str, Aelement): # need to enter the A element
+        try:
+            super(UnconvMAX, self).__init__(formula=formula)
+        except ValueError:
+            self._A = Aelement
+    @property
+    def maxelements(self):
+        maxelements = super(UnconvMAX, self).maxelements
+        if  not maxelements["A"]:
+            maxelements["A"] = self._A
+        return maxelements
+
+
 def generate_MAX_formula(M: str = "Ti",
                          A: str = "Al",
                          X: str = "C",
