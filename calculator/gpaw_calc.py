@@ -305,7 +305,8 @@ class Gpaw(Gpawjob):
         if not self.newrunscheme:
             self.optimizer = Optimize(atoms=self.atoms, **self.relax_inputs)
         else:
-            self.optimizer = self.newrunscheme(atoms=self.atoms, **self.relax_inputs)
+            self._optimizer = self.newrunscheme(atoms=self.atoms, **self.relax_inputs) #just assign without anycheck
+            # on the newrunscheme
 
     @property
     def optimizer(self):
