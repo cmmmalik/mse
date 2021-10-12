@@ -158,10 +158,11 @@ class MAXcomp:
 class UnconvMAX(MAXcomp):
 
     def __init__(self, formula:str, Aelement): # need to enter the A element
+        self._A = Aelement
         try:
             super(UnconvMAX, self).__init__(formula=formula)
         except ValueError:
-            self._A = Aelement
+            pass
     @property
     def maxelements(self):
         maxelements = super(UnconvMAX, self).maxelements
