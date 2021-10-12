@@ -163,11 +163,15 @@ class UnconvMAX(MAXcomp):
             super(UnconvMAX, self).__init__(formula=formula)
         except ValueError:
             pass
+
+
     @property
     def maxelements(self):
         maxelements = super(UnconvMAX, self).maxelements
         if  not maxelements["A"]:
             maxelements["A"] = self._A
+        maxelements["M"] = " ".join([i for i in maxelements["M"].split() if i != self._A)
+
         return maxelements
 
 
