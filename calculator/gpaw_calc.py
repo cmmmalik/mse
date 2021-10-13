@@ -28,14 +28,6 @@ class PickleReadError(Exception):
 
 class Gpaw(Gpawjob):
 
-    # defaults_inputs = {"calc_args": {"kpts": {"density": 4, "gamma": True},
-    #                    "xc": "PBE",
-    #                    "eigensolver": "rmm-diis",
-    #                    "occupations": {"name": "fermi-dirac", "width": 0.4}},
-    #                    "mode_args": {"encut": 500}}
-    # This is not a good approach for keeping a dictionary here like this
-    # Use mutable objects like tuple, etc.
-
     defaults_files = {"input": "inp.p",
                       "output": "out.p",
                       "calc": "calc.gpw",
@@ -46,10 +38,11 @@ class Gpaw(Gpawjob):
     asedbname = "out.db"
 
     def __init__(self,
-                 name,
-                 working_directory=None,
-                 atoms=None,
-                 run_type: "static" or "relax" = "static",
+                 name: str,
+                 working_directory: str = None,
+                 atoms = None,
+                 restart: bool = False,
+                 run_type: "static" or "relax" or "workflow" = "static",
                  calcinps: dict = None,
                  modeinps: dict = None,
                  relaxinps: dict = None,
@@ -62,6 +55,10 @@ class Gpaw(Gpawjob):
         self.run_type = run_type
         self._optimizer = None
         self._newrunscheme = None
+
+        self._workflow = None
+        self.workflow_params = dict()
+        self._initialized_wrkflow = None
 
         if self.run_type == "static":
             self.inputs["calc_args"]["txt"] = "static.txt"
@@ -76,19 +73,26 @@ class Gpaw(Gpawjob):
             # set trajectory
             if kwargs.get("trajectory", False):
                 self.relax_inputs["trajectory"] = self.defaults_files["traj"]
+
+        elif self.run_type == "workflow":
+            wrkf = kwargs.get("workflow", False)
+            if wrkf:
+                self.set_workflow(wrkf)
+            wrkf_params = kwargs.get("workflow_params", dict())
+            self.workflow_params = wrkf_params.copy()
+            self._initialized_wrkflow = False
+
         else:
-            raise ValueError("run_type can have 'static' or 'relax' values, but got {}".format(self.run_type))
+            raise ValueError("run_type can have 'static' or 'relax' or 'workflow' values, but got {}".format(self.run_type))
 
         if isinstance(calcinps, dict):
             if calcinps is None:
                 calcinps = dict()
-
             self.inputs["calc_args"].update(calcinps)
 
         elif calcinps is not None:
             raise TypeError("'calcinps' must be an instance of {}, but found an instance of type {} ".format(dict,
                                                                                                              type(calcinps)))
-
         if isinstance(modeinps, dict):
             if modeinps is None:
                 modeinps = dict()
@@ -97,7 +101,6 @@ class Gpaw(Gpawjob):
         elif modeinps is not None:
             raise TypeError("'modeinps' must be an instance of {}, but found an instance of type {}".format(dict,
                                                                                                             type(modeinps)))
-
         # outputs
         self.converged = None
         self.traj = None
@@ -113,11 +116,10 @@ class Gpaw(Gpawjob):
     @staticmethod
     def _default_inputs():
 
-        out = {"calc_args": {"kpts": {"density": 4, "gamma": True},
-                                         "xc": "PBE",
-                                         "eigensolver": "rmm-diis",},
+        out = {"calc_args": {"xc": "PBE",
+                             "eigensolver": "rmm-diis",},
                                 #         "occupations": {"name": "fermi-dirac", "width": 0.4}}, # default smearing
-                           "mode_args": {"encut": 500}}
+                           "mode_args": {}}
         return out
 
     @staticmethod
@@ -130,17 +132,23 @@ class Gpaw(Gpawjob):
 
     def relax_run(self):
         self.setoptimizer()
-
         try:
             return self.optimizer.optimize()
         except AttributeError:
             return self.optimizer.run() # look for optimize and then run()
 
-  #  def relax_cell(self): # run should call this
- #       optimize(atoms=self.atoms, reltype="cell", fmax=self.fmax)
+    def workflow_run(self):
+        if not self._initialized_wrkflow:
+            self.instancialize_workflow()
+        return self.workflow.run()
 
-  #  def relax_all(self):
-  #      optimize()
+    def instancialize_workflow(self, pass_atoms:bool=True):
+        kwargs = {}
+        if pass_atoms is True:
+            kwargs["atoms"] = self.atoms
+        kwargs.update(self.workflow_params)
+        self._workflow = self.workflow(**kwargs)
+        self._initialized_wrkflow = True
 
     def run(self):
 
@@ -148,6 +156,9 @@ class Gpaw(Gpawjob):
             self.static_run()
         elif self.run_type == "relax":
             return self.relax_run()
+        elif self.run_type == "workflow":
+            return
+
         else:
             raise ValueError("Unknown value of 'run_type': {}".format(self.run_type))
 
@@ -249,7 +260,6 @@ class Gpaw(Gpawjob):
 
     @classmethod
     def read_traj(cls, filename: str = None):
-
         if not filename:
             filename = cls.defaults_files["traj"]
 
@@ -327,6 +337,20 @@ class Gpaw(Gpawjob):
     @newrunscheme.setter
     def newrunscheme(self, value):
         self._newrunscheme = value
+
+    @property
+    def workflow(self):
+        return self._workflow
+
+    @workflow.setter
+    def workflow(self, call):
+        if callable(call):
+            self._workflow = call
+        else:
+            ValueError("Value must be callable")
+
+    def set_workflow(self, call):
+        self.workflow = call
 
     @classmethod
     def help(cls):
