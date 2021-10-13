@@ -130,10 +130,11 @@ class Gpaw(Gpawjob):
 
     def relax_run(self):
         self.setoptimizer()
-        if not self._newrunscheme:
+
+        try:
             return self.optimizer.optimize()
-        else:
-            return self.optimizer.run() # hack for now for using jochens tools
+        except AttributeError:
+            return self.optimizer.run() # look for optimize and then run()
 
   #  def relax_cell(self): # run should call this
  #       optimize(atoms=self.atoms, reltype="cell", fmax=self.fmax)
