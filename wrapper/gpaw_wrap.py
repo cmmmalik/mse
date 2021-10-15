@@ -197,6 +197,12 @@ def main():
     scf = job.atoms.calc.scf
     job.scf = scf
     job.atoms.calc = None
+    if job.newrunscheme:
+        if hasattr(job.newrunscheme, "calculator"):
+            job.newrunscheme.calculator = None
+        if hasattr(job.newrunscheme, "atoms"):
+            if job.atoms.calc:
+                job.atoms.calc = None
 
     with paropen(job.defaults_files["output"], mode="wb") as f: # write only the master
         pickle.dump(job, f)
