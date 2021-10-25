@@ -1,10 +1,11 @@
 import ase.calculators.calculator as asecalculator
 from ase.units import Ha
+from gpaw import PW
 from ase.parallel import parprint
 from importlib import import_module
 from copy import deepcopy
 import warnings
-
+import sys
 
 def getnewcalc(calc: asecalculator, txt="-"):
     try:
@@ -35,18 +36,34 @@ def setmodecalc(calc: asecalculator, dedecut: str or float or int = None, **kwar
     calc.set(mode=mode) # update the mode
 
 
-def setmodecalc_v1(calc: asecalculator, dedecut: str or float or int = None, **kwargs):
+def resetmodecalc(calc: asecalculator, dedecut: str or float or int = None, **kwargs):
 
         mode = calc.parameters["mode"]
         org_mode_dict = mode.copy() if isinstance(mode, dict) else mode.todict()
 
-        if dedecut is not None:
-            mode.dedecut = dedecut
 
-        for k, value in kwargs.items():
-            if k == "ecut":
-                value = value / Ha
-            setattr(mode, k, value)
+        if "pw" not in org_mode_dict.values():
+            warnings.warn("dedecut can not be set for non PW method, I will just update with kwargs")
+            org_mode_dict.update(kwargs)
+            calc.set(mode=org_mode_dict.copy())
+            return
+
+        mode_dct = deepcopy(org_mode_dict)
+        mode_dct.update(kwargs)
+
+        mode_dct["dedecut"] = dedecut
+        mode_dct.pop("name", None)
+        mode = PW(**mode_dct)
+
+        # if dedecut is not None:
+        #     mode.dedecut = dedecut
+        #
+        # for k, value in kwargs.items():
+        #     if k == "ecut":
+        #         value = value / Ha
+        #     setattr(mode, k, value)
 
         if mode.todict() == org_mode_dict:  # do nothing if mode is not changed
             warnings.warn("Original and updated mode were not different")
+        parprint("Resetting the mode to: {}".format(mode.todict()), flush=True)
+        calc.set(mode=mode)

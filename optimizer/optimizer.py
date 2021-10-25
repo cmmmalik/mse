@@ -3,7 +3,7 @@ from itertools import cycle as itcycle
 from typing import Iterable
 import warnings
 
-from mse.calculator.ase import getnewcalc, setmodecalc
+from mse.calculator.ase import getnewcalc, setmodecalc, resetmodecalc
 from mse.optimizer.gpaw_functions import get_dedecut as gget_dedecut, optimize as goptimize
 
 
@@ -105,7 +105,7 @@ class Optimize:
         return conv
 
     def get_dedecut(self):
-        ncalc = getnewcalc(self.atoms.calc)
+        ncalc = getnewcalc(self.atoms.calc, txt="dedecut.txt")
         # Only for gpaw this will work
         encut = ncalc.todict()["mode"]["ecut"]
         dedecut = gget_dedecut(self.atoms.copy(), encut=encut, calc=ncalc)
@@ -164,7 +164,7 @@ class Optimize:
                 return conv
 
     def _updatemodecalc(self, dedecut, **kwargs):
-        setmodecalc(self.atoms.calc, dedecut=dedecut, **kwargs)
+        resetmodecalc(self.atoms.calc, dedecut=dedecut, **kwargs)
 
     @property
     def update_dedecut(self):
