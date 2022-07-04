@@ -93,7 +93,7 @@ class Readparameters:
             self._parse_k_points()
 
     def __repr__(self):
-        st = "{name:<8}, parameters={self.parameters}," \
+        st = "{self.name:<8}, parameters={self.parameters}," \
              "inputs(txtfile)={self.inputs}," \
              "kp(.py)={self.kp}"
 

@@ -352,7 +352,7 @@ class HPCjob:
         if self.working_directory:
             st += "working_directory:{},".format(self.working_directory)
         if self.main_directory:
-            st += "main_directory:{},".format(self.main_directory)
+            st += "main_directory:{}\n".format(self.main_directory)
         if self.server:
             st += "server:{}".format(self.server)
 
@@ -387,9 +387,9 @@ class HPCjob:
                 **kwargs):
         self.server.prepare(random_folder=random_folder, folder_name=folder_name, **kwargs)
 
-    def submit(self):
+    def submit(self, check:bool=True):
         try:
-            self.server.submit()
+            self.server.submit(check=check)
         except Exception:
             raise Exception("Couldn't submit the {}".format(self.jobname))
         finally:

@@ -5,7 +5,7 @@ from pymatgen.core.composition import Composition
 from pymatgen.core.periodic_table import Element
 
 from mse.utilities import replace_1_string
-
+import re
 
 class EnhancedComposition(Composition):
 
@@ -157,12 +157,18 @@ class MAXcomp:
 
 class UnconvMAX(MAXcomp):
 
-    def __init__(self, formula:str, Aelement): # need to enter the A element
+    def __init__(self, formula:str, Aelement:str=None): # need to enter the A element
+        if not Aelement:
+            els = re.findall("[A-Z][a-z]?", formula)
+            assert len(els) == 3
+            Aelement = els[1]
         self._A = Aelement
+
         try:
             super(UnconvMAX, self).__init__(formula=formula)
         except ValueError:
             pass
+
 
 
     @property

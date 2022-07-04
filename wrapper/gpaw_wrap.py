@@ -148,7 +148,7 @@ def autosendback(remove:bool, backup:bool, envcmd:str, verbosity:int=0):
 
 def savetodb(job, *args, **kwargs):
 
-    if world.rank == 0: # write only with master
+#    if world.rank == 0: # write only with master
         # with asedbconnect("out.db") as mydb:
         #     mydb.write(job.atoms)
     # parprint("Successfully written into the database")
@@ -200,9 +200,11 @@ def main():
     if job.newrunscheme:
         if hasattr(job.newrunscheme, "calculator"):
             job.newrunscheme.calculator = None
+
         if hasattr(job.newrunscheme, "atoms"):
-            if job.atoms.calc:
-                job.atoms.calc = None
+            if hasattr(job.newrunscheme.atoms, "calc"):
+                if job.newrunscheme.atoms.calc:
+                    job.newrunscheme.atoms.calc = None
 
     with paropen(job.defaults_files["output"], mode="wb") as f: # write only the master
         pickle.dump(job, f)
@@ -212,7 +214,6 @@ def main():
 
 #         now go back to origin_host
 #         TODO: Do this in a better way, It's a work around
-
 
 if __name__ == "__main__":
 

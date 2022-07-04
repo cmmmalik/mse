@@ -39,7 +39,7 @@ def setmodecalc(calc: asecalculator, dedecut: str or float or int = None, **kwar
 def resetmodecalc(calc: asecalculator, dedecut: str or float or int = None, **kwargs):
 
         mode = calc.parameters["mode"]
-        org_mode_dict = mode.copy() if isinstance(mode, dict) else mode.todict()
+        org_mode_dict = deepcopy(mode) if isinstance(mode, dict) else mode.todict()
 
 
         if "pw" not in org_mode_dict.values():

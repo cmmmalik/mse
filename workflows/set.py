@@ -105,7 +105,8 @@ def set_workflow_relaxation(composition: str,
                             symprec: float or int = 0.01,
                             hpckwargs: dict = None,
                             relaxargs: dict = None,
-                            verbosity: int = 1):
+                            verbosity: int = 1,
+                            **extraargs):
 
         assert atoms or row
         modeargs = dict() if not modeargs else modeargs
@@ -126,7 +127,7 @@ def set_workflow_relaxation(composition: str,
         modeinps.update(modeargs)
         calcinps.update(calcargs)
         if verbosity >= 1:
-            print("calcinps:{}\nmodeinps:{}\nrelaxinps:{}".format(calcinps, modeinps, relaxargs))
+            print("calcinps:{}\nmodeinps:{}\nrelaxinps:{}\nhpcinps:{}".format(calcinps, modeinps, relaxargs, hpckwargs))
 
         if not atoms and row:
             atoms = row.toatoms(False)
@@ -189,7 +190,7 @@ def set_workflow_relaxation(composition: str,
         if clean_dir:
             wrkf.job.reset()
 
-        wrkf.make_ready(autofetch=True)
+        wrkf.make_ready(autofetch=extraargs.get("autofetch", True))
 
         if not hpckwargs:
             hpckwargs = dict()

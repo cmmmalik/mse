@@ -410,6 +410,9 @@ class VASP(ASEjob):
 
         self.run_check()
         submitargs, prepargs = filterargs(self.hpc.server, **kwargs)
+        print("submission arguments : {}".format(submitargs))
+        print("preparation arguments: {}".format(prepargs))
+
         if not "runcmd" in submitargs:
 
             submitargs["runcmd"] = generate_runcmd(inputfile=self.default_files["input"],

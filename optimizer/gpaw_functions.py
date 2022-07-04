@@ -43,7 +43,9 @@ def optimize(atoms,
         raise KeyError("The {0} is invalid or  not found."
                        "The available algorithms are: {1}".format(relaxalgorithm, optimizer_algorithms.values()))
 
+    parprint("Relaxation type: {}\nMask : {}\nOther relaxation parameters {}".format(reltype, mask, opargs))
     if reltype == 'full':
+
         uf = UnitCellFilter(atoms, mask=mask)
         relax = optimizer_algorithms[relaxalgorithm](uf, logfile="rel-all.log", **opargs)
         if verbose:

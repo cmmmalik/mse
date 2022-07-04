@@ -1,6 +1,6 @@
 from ase.atoms import Atoms
 from ase.spacegroup.symmetrize import refine_symmetry, check_symmetry
-from collections import Iterable
+from collections.abc import Iterable
 from copy import deepcopy
 import numpy as np
 import os
@@ -8,6 +8,7 @@ import warnings
 
 from mse.calculator.gpaw_calc import Gpaw
 from mse.Jobs.job import HPCjob
+from HPCtools.hpc_tools3 import filterargs
 # TODO: Implement proper Workflow classes (Next steps); Below is just a proof of concept
 
 
@@ -187,12 +188,15 @@ class Workflow:
         for j in self.jobs:
             hpc = HPCjob(server=server, jobname=j.name, working_directory=j.working_directory)
             j.hpc = hpc
+            submitargs, prepargs = filterargs(hpc.server, **kwargs)
+
             j.submit_hpc(remove=remove,
                          backup=backup,
                          save_db=save_db,
                          dry_run=True,
-                         save_calc=save_calc, **kwargs)
-            hpc.prepare()
+                         save_calc=save_calc, **submitargs)
+
+            hpc.prepare(**prepargs)
 
     def submit(self):
         for j in self.jobs:
@@ -211,7 +215,7 @@ class Workflow:
         return self.read_Jobs(wrkpaths=self.wrkpaths)
 
 
-def filterargs(wf: Workflow, **kwargs):
+def filterargs_old(wf: Workflow, **kwargs):
 
     gen = wf.pre_setup_jobs.__code__
     gen = list(gen.co_varnames[:gen.co_argcount])

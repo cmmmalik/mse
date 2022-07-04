@@ -2,6 +2,8 @@ from ase.db import connect as asedbconnect
 from ase.db.core import Database as dbCore
 from ase.io import read as aseread
 from ase.io.trajectory import Trajectory
+from ase.atoms import  Atoms
+
 import pickle
 from gpaw import GPAW as gpawGPAW
 import os
@@ -17,9 +19,6 @@ from mse.io.gpaw_io import Readparameters
 from mse.analysis.energies import energy_per_atom as simenergy_per_atom, \
     energy_per_formula as simenergy_per_formula
 from HPCtools.hpc_tools3 import filterargs, directorychange
-
-# TODO: add relaxation schemes
-# TODO: Add save_to_database function with columns keys of parameters. (See Gpawjob class and ase_db/ASE_IO)
 
 
 class PickleReadError(Exception):
@@ -176,6 +175,9 @@ class Gpaw(Gpawjob):
 
         self.run_check()
         submitargs, prepargs = filterargs(self.hpc.server, **kwargs)
+        print("Submission arguments: {}".format(submitargs))
+        print("Preparation arguments: {}".format(prepargs))
+
         if not "runcmd" in submitargs:
 
             submitargs["runcmd"] = generate_runcmd(inputfile=self.defaults_files["input"],
@@ -499,3 +501,13 @@ class Gpaw(Gpawjob):
             out["kpts"] = kpts
 
         return out
+
+    def todict(self):
+        dct= {}
+        for k,v in self.__dict__.items():
+            if isinstance(v,Atoms):
+                v = v.todict()
+            elif k == "_optimizer" or k == "row" or k == "_newrunscheme": # can't save these at the moment
+                continue
+            dct[k] = v
+        return dct

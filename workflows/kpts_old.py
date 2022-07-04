@@ -161,10 +161,14 @@ def get_conv_index(energies=None, diff_energies=None, tolerance=0.5):
         print("Make sure the units of tolerance and values in the arrays 'energies' or 'diff_energies' are same")
         delta = diff_energies
 
-    index = np.argmin(delta[:-1])
+    indices = (np.asarray(delta[:-1]) < tolerance).nonzero()
+    # index = np.argmin(delta[:-1])
 
-    if delta[index] < tolerance:
-        return index
+    # if delta[index] < tolerance:
+    #     return index
+
+    if indices.size != 0:
+        return indices[0]
 
     print("Tolerance is too high or the energies are not converged")
     return None

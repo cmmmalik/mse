@@ -23,7 +23,7 @@ class Optimize:
     default_parameters = (("fmax", 0.01,),
                           ("algorithm", "BFGS",),
                           ("trajectory", None,),
-                          )
+                          ("mask", None,))
 
     def __init__(self, atoms: ase.atoms,
                  reltype: str or None = "pos",
@@ -33,12 +33,12 @@ class Optimize:
         self._reltype = reltype
         self.parameters = dict(self.default_parameters)
 
-        aargs = self.allowed_args()
+        # aargs = self.allowed_args()
 
-#        for k in kwargs:
-#            if k not in aargs:
-#                display = ",".join(aargs)
-#                raise ValueError(f"Invalid keyword argument {k}, allowed arguments are {display}")
+        # for k in kwargs:
+        #    if k not in aargs:
+        #        display = ",".join(aargs)
+        #        raise ValueError(f"Invalid keyword argument {k}, allowed arguments are {display}")
 
         self.steps = kwargs.get("steps", None)
         upde = None
@@ -51,10 +51,11 @@ class Optimize:
         for k, v in self.parameters.items():
             self.parameters[k] = kwargs.get(k, v)
 
+
     @classmethod
     def allowed_args(cls):
         args, _ = zip(*cls.default_parameters)
-        return ["steps", "update_dedecut", "cycle", "mask"] + list(args)
+        return ["steps", "update_dedecut", "cycle"] + list(args)
 
     @property
     def atoms(self):
@@ -187,7 +188,6 @@ class Moptimize:
         self.reltype = reltype
 
     def optimizers(self):
-
         for i, r in enumerate(self.reltype):
             kwargs = {}
             for key, value in self.parameters.items():

@@ -101,6 +101,14 @@ class Baseworkflow:
         self._auto_fetch(autofetch)
         self.job.initialize()
 
+    def attach_hpc(self, server: str):
+        hpc = HPCjob(server=server,
+                     jobname=self.job.name,
+                     working_directory=self.job.working_directory,
+                     )
+
+        self.job.hpc = hpc
+
     def hpc_setup(self,
                   server: str,
                   remove: bool = True,
@@ -109,14 +117,19 @@ class Baseworkflow:
                   save_calc: bool = False,
                   **kwargs):
 
-        hpc = HPCjob(server=server,
-                     jobname=self.job.name,
-                     working_directory=self.job.working_directory,
-                     )
+        self.attach_hpc(server=server)
 
-        self.job.hpc = hpc
+        # hpc = HPCjob(server=server,
+        #              jobname=self.job.name,
+        #              working_directory=self.job.working_directory,
+        #              )
+        #
+        # self.job.hpc = hpc
+
         random_folder = kwargs.get("random_folder", True)
         folder_name = kwargs.get("folder_name", False)
+        check = kwargs.pop("check", True)
+
         self.job.submit_hpc(remove=remove,
                             backup=backup,
                             save_db=save_db,
@@ -124,7 +137,7 @@ class Baseworkflow:
                             save_calc=save_calc,
                             **kwargs)
 
-        hpc.prepare(random_folder=random_folder, folder_name=folder_name)
+        self.job.hpc.prepare(random_folder=random_folder, folder_name=folder_name, check=check)
 
     def submit(self):
         self.job.submit()
