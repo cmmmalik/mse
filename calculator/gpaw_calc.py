@@ -100,6 +100,7 @@ class Gpaw(Gpawjob):
         elif modeinps is not None:
             raise TypeError("'modeinps' must be an instance of {}, but found an instance of type {}".format(dict,
                                                                                                             type(modeinps)))
+        self._restart = restart
         # outputs
         self.converged = None
         self.traj = None
@@ -511,3 +512,7 @@ class Gpaw(Gpawjob):
                 continue
             dct[k] = v
         return dct
+
+    @property
+    def restart(self):
+        return self._restart

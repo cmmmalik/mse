@@ -43,6 +43,7 @@ class VASP(ASEjob):
                  working_directory: str = None,
                  atoms: aseatoms = None,
                  calcinps: dict = None,
+                 modeinps: dict = None,
                  run_type: "static" or "relax" = "static",
                  ):
 
@@ -63,7 +64,11 @@ class VASP(ASEjob):
             self.inputs.update(calcinps)
         else:
             raise TypeError("calcinps must be an instance of {}, instead received {}".format(dict,
-                                                                                             type(calcinps)))
+                                                                                         type(calcinps)))
+        if isinstance(modeinps, dict):
+            warnings.warn("The use of Mode inps is depracated")
+            self.inputs.update(modeinps)
+
         # outputs
         self._converged = None
         self._row = None
@@ -187,6 +192,7 @@ class VASP(ASEjob):
     def initialize(self):
         if not os.path.exists(self.working_directory):
             super(ASEjob, self).initialize()
+
         cd = self._directory_change()
         self._save()
         cd.exit()
@@ -279,8 +285,9 @@ class VASP(ASEjob):
             row = self.atoms
 
         formula = self.atoms.get_chemical_formula(empirical=True)
+        if keys["path"]:
+            keys["rpath"] = os.path.relpath(keys["path"])
 
-        keys["rpath"] = os.path.relpath(keys["path"])
         keys["wrkdir"] = "{}".format(self.working_directory)
         keys["static"] = self.run_type == "static"
         keys["relaxed"] = not keys["static"]
@@ -297,6 +304,8 @@ class VASP(ASEjob):
         data = dict()
 
         row = self.row
+        subdir = self.inputs.get("directory", ".")
+
         try:
             params = row.calculator_parameters.copy()
             asepath = os.path.abspath(self.asedbname)
@@ -317,7 +326,7 @@ class VASP(ASEjob):
         jobpath = os.path.abspath(self.default_files["output"])
         if os.path.exists(jobpath):
             keys["jobpath"] = jobpath
-        path = os.path.abspath("OUTCAR")
+        path = os.path.abspath(os.path.join(subdir, "OUTCAR"))
         if os.path.exists(path):
             keys["path"] = path
         if encut:
@@ -341,13 +350,13 @@ class VASP(ASEjob):
         keys.update({"energy_per_atom": simenergy_per_atom(row=row),
                      "energy_per_formula": simenergy_per_formula(row=row)})
 
-        init_poscar = Savedb.find_poscar(directory=".", query=["POSCAR"])
+        init_poscar = Savedb.find_poscar(directory=subdir, query=["POSCAR"])
         if isinstance(init_poscar, (list, tuple)):
             init_poscar.sort()
             init_poscar = init_poscar[0]
 
         if not init_poscar:  # highly unlikely
-            init_poscar = "OUTCAR"
+            init_poscar = os.path.join(subdir, "OUTCAR")
         try:
             init_atoms = aseread(init_poscar, index=0, format="vasp")
         except OSError:
@@ -409,6 +418,7 @@ class VASP(ASEjob):
                    **kwargs):
 
         self.run_check()
+        pre_runcmd = kwargs.pop("pre_runcmd", None)
         submitargs, prepargs = filterargs(self.hpc.server, **kwargs)
         print("submission arguments : {}".format(submitargs))
         print("preparation arguments: {}".format(prepargs))
@@ -423,6 +433,10 @@ class VASP(ASEjob):
                                                    envcmd=envcmd)
         if not module and not code:
             code = "vasp"
+
+
+        if pre_runcmd:
+            submitargs["runcmd"] = pre_runcmd + "\n" + submitargs["runcmd"]
 
         self.hpc.server.write_submit(code=code, module=module, **submitargs)
 

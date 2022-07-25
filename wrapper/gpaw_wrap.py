@@ -8,6 +8,7 @@ from functools import partial
 import traceback
 import sys
 
+# from mse.calculator.gpaw_calc import Gpaw
 from mse.servertools.Slurm import putback_origin
 from HPCtools.hpc_tools3 import HPCMain
 
@@ -74,7 +75,7 @@ def commandlineargs():
     return args
 
 
-def initialize_calc(job):
+def initialize_calc(job): #ToDo: this should be part of the job -----
 
     calc = getattr(gpaw, job.calc)
     mode = getattr(gpaw, job.mode)
@@ -87,7 +88,17 @@ def initialize_calc(job):
     except KeyError:
         raise RuntimeError("Encut was not found")
 
-    job.atoms.calc = calc(mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+    attach = inputs["calc_args"].pop("attach", None)
+
+    if job.restart:
+        job.atoms.calc = calc(restart="calc.gpw", mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+        return
+    calc = calc(mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+
+    if attach:
+        calc.attach(calc.write, **attach)
+
+    job.atoms.calc = calc
 
 
 def read_jobinfo(jobinfo: str = "job.info"):
@@ -180,7 +191,7 @@ def main():
         # write the rest of outputs anyway - do not raise the exception
 
     # save calculator_first
-    if savecalc:
+    if savecalc and not job.inputs["calc_args"].get("attach", None):
         try:
             job.atoms.calc.write("calc.gpw")
         except Exception as e:

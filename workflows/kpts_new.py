@@ -7,6 +7,7 @@ import os
 import warnings
 
 from mse.calculator.gpaw_calc import Gpaw
+from mse.calculator.vasp_calc import VASP
 from mse.Jobs.job import HPCjob
 from HPCtools.hpc_tools3 import filterargs
 # TODO: Implement proper Workflow classes (Next steps); Below is just a proof of concept
@@ -19,6 +20,7 @@ class Workflow:
                  encut: int or float,
                  kpts: list or tuple or Iterable = None,
                  kplimits: [int, int] = None,
+                 calculator_type: str = "gpaw",
                  verbosity: int = 1):
 
         assert kpts or kplimits
@@ -32,6 +34,7 @@ class Workflow:
 
         self._encut = encut
         self._atoms = atoms
+        self._calculator_type = calculator_type
         self.verbosity = verbosity
 
         self._wrkpaths = None
@@ -48,6 +51,10 @@ class Workflow:
     @property
     def kpts(self):
         return self._kpts
+
+    @property
+    def calculator_type(self):
+        return self._calculator_type
 
     @property
     def wrkpaths(self):
@@ -115,6 +122,18 @@ class Workflow:
         if self.verbosity >= 2:
             print("Debug:\nKpts: {}".format(Kpts))
 
+        if self.calculator_type == "gpaw":
+            Jobfunc = Gpaw
+        elif self.calculator_type == "vasp":
+            Jobfunc = VASP
+            warnings.warn("Mode inps:{}, will not be used".format(modeinps))
+            print("For VASP they are part of calcinps")
+            print("Cleaning....")
+            modeinps = dict()
+
+        else:
+            raise ValueError("Unknown {} calculator_type given".format(self.calculator_type))
+
         jobs = []
         for i, w in enumerate(self.wrkpaths):
             c_calcinps = deepcopy(calcinps)
@@ -123,7 +142,7 @@ class Workflow:
             c_modeinps = deepcopy(modeinps)
             c_modeinps.update({"encut": self.encut})
 
-            j = Gpaw(name=name,
+            j = Jobfunc(name=name,
                      working_directory=w,
                      atoms=self.atoms,
                      run_type=run_type,
