@@ -3,6 +3,7 @@ from ase.db.core import Database as dbCore
 from ase.io import read as aseread
 from ase.io.trajectory import Trajectory
 from ase.atoms import  Atoms
+from ase.parallel import paropen, world
 
 import pickle
 from gpaw import GPAW as gpawGPAW
@@ -287,7 +288,7 @@ class Gpaw(Gpawjob):
         return cls.ase_row_db().toatoms(True)
 
     def _save(self):
-        with open(self.defaults_files["input"], "wb") as f:
+        with paropen(self.defaults_files["input"], "wb") as f:
             pickle.dump(self, f)
 
     def _savetodb(self, *args, **kwargs):
@@ -302,11 +303,19 @@ class Gpaw(Gpawjob):
         return cd
 
     def initialize(self):
+        # allow only master to write #
+        if self.restart: # save input and run
+            cd = self._dirchanger()
+            self._save()
+            cd.exit()
+            self._setinitialized()
+            return
+
         if os.path.exists(self.working_directory):
             super(Gpawjob, self).structure_write(filename=os.path.join(self.working_directory,
                                                 getattr(self.inputs, "poscarname", "POSCAR")),
-                                                 format="vasp",
-                                                 vasp5=True)
+                                                format="vasp",
+                                                vasp5=True)
         else:
             super(Gpaw, self).initialize()
 
@@ -374,7 +383,7 @@ class Gpaw(Gpawjob):
             gatoms, data, keys = self._oldgpaw_reader()
 
             if gatoms != self.atoms:
-                warnings.warn(f"Atoms read by Gpaw reader and already-present in the instance are not same", ValueError)
+                warnings.warn("Atoms read by Gpaw reader and already-present in the instance are not same", ValueError)
             row = gatoms
 
         if not "rpath" in keys:
@@ -504,9 +513,9 @@ class Gpaw(Gpawjob):
         return out
 
     def todict(self):
-        dct= {}
-        for k,v in self.__dict__.items():
-            if isinstance(v,Atoms):
+        dct = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, Atoms):
                 v = v.todict()
             elif k == "_optimizer" or k == "row" or k == "_newrunscheme": # can't save these at the moment
                 continue

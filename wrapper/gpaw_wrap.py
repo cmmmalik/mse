@@ -1,7 +1,10 @@
 import pickle
 import gpaw
 import argparse
+import warnings
+
 from ase.parallel import paropen, parprint as aseparprint, world
+
 from ase.db import connect as asedbconnect
 from copy import deepcopy
 from functools import partial
@@ -77,23 +80,31 @@ def commandlineargs():
 
 def initialize_calc(job): #ToDo: this should be part of the job -----
 
-    calc = getattr(gpaw, job.calc)
-    mode = getattr(gpaw, job.mode)
+    CALC = getattr(gpaw, job.calc)
+    MODE = getattr(gpaw, job.mode)
     inputs = deepcopy(job.inputs)
 
+    calc = None
     modeargs = inputs["mode_args"]
 
     try:
         ecut = modeargs.pop("encut") # better to change this key to ecut
     except KeyError:
-        raise RuntimeError("Encut was not found")
+        warnings.warn("Encut was not provided", RuntimeWarning)
+        ecut = None
 
     attach = inputs["calc_args"].pop("attach", None)
 
     if job.restart:
-        job.atoms.calc = calc(restart="calc.gpw", mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
-        return
-    calc = calc(mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+        from gpaw import restart
+        atoms, calc = restart(filename="calc.gpw", **inputs["calc_args"])
+        if job.atoms:
+            warnings.warn("Atoms object was found in the job, it will be overwritten with atoms read from calc.gpw ")
+
+        job.atoms = atoms
+        # job.atoms.calc = calc(restart="calc.gpw", mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+    if not calc:
+        calc = CALC(mode=MODE(ecut=ecut, **modeargs), **inputs["calc_args"])
 
     if attach:
         calc.attach(calc.write, **attach)

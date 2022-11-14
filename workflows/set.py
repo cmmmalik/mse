@@ -103,15 +103,17 @@ def set_workflow_relaxation(composition: str,
                             clean_dir: bool = False,
                             symmetrize: bool = False,
                             symprec: float or int = 0.01,
+                            jobargs:dict = None,
                             hpckwargs: dict = None,
                             relaxargs: dict = None,
                             verbosity: int = 1,
                             **extraargs):
 
-        assert atoms or row
+        # assert atoms or row
         modeargs = dict() if not modeargs else modeargs
         calcargs = dict() if not calcargs else calcargs
         relaxargs = dict() if not relaxargs else relaxargs
+        jobargs = dict() if not jobargs else jobargs
 
         if row:
             if row.calculator == "gpaw":
@@ -135,7 +137,8 @@ def set_workflow_relaxation(composition: str,
         if dry_run:
             return
 
-        atoms.calc = None # remove old calculator from atoms
+        # atoms.calc = None # remove old calculator from atoms
+        assert jobargs.get("restart") or atoms # if restart that means atoms will be read fomr calc.gpw
 
         if calculator_type == "gpaw":
             if encut:
@@ -186,7 +189,8 @@ def set_workflow_relaxation(composition: str,
                             run_type=run_type,
                             modeinps=modeinps,
                             calcinps=calcinps,
-                            relaxinps=relaxargs, )
+                            relaxinps=relaxargs,
+                            **jobargs)
         if clean_dir:
             wrkf.job.reset()
 

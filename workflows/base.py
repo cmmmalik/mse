@@ -10,7 +10,7 @@ from mse.Jobs.job import HPCjob
 class Baseworkflow:
 
     def __init__(self,
-                 atoms: Atoms,
+                 atoms: Atoms or None= None,
                  working_directory: str = None,
                  calculator_type: "gpaw" or "vasp" = "gpaw",
                  dircheck: bool = True,
@@ -21,7 +21,7 @@ class Baseworkflow:
                 raise ValueError("Working directory {} already exists"
                                  "Set 'check = False' to ignore this".format(working_directory))
 
-        self.atoms = atoms
+        self._atoms = atoms
         self.verbosity = verbosity
         if calculator_type not in ["gpaw", "vasp"]:
             raise ValueError("'calculator_type' must set to 'gpaw' or 'vasp', instead of {}".format(calculator_type))

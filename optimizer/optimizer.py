@@ -1,4 +1,5 @@
 import ase.atoms
+from ase.spacegroup.symmetrize import FixSymmetry
 from itertools import cycle as itcycle
 from typing import Iterable
 import warnings
@@ -27,11 +28,13 @@ class Optimize:
 
     def __init__(self, atoms: ase.atoms,
                  reltype: str or None = "pos",
+                 working_directory:str=".",
                  **kwargs):
 
         self._atoms = atoms
         self._reltype = reltype
         self.parameters = dict(self.default_parameters)
+        self.working_directory=working_directory
 
         # aargs = self.allowed_args()
 
@@ -102,6 +105,7 @@ class Optimize:
         conv = goptimize(self.atoms,
                          reltype=self.reltype,
                          relaxalgorithm=self.parameters["algorithm"],
+                         working_directory=self.working_directory,
                          **kwargs)
         return conv
 
@@ -181,11 +185,14 @@ class Optimize:
 
 class Moptimize:
 
-    def __init__(self, atoms: ase.atoms, reltype: Iterable = ("ions", "cell", "full"), **kwargs):
+    def __init__(self, atoms: ase.atoms,
+                 working_directory:str=".",
+                 reltype: Iterable = ("ions", "cell", "full"), **kwargs):
 
         self._atoms = atoms
         self.parameters = kwargs
         self.reltype = reltype
+        self.working_directory=working_directory
 
     def optimizers(self):
         for i, r in enumerate(self.reltype):
@@ -195,7 +202,7 @@ class Moptimize:
                     kwargs[key] = value[i]
                 else:
                     kwargs[key] = value
-            yield Optimize(atoms=self.atoms, reltype=r, **kwargs)
+            yield Optimize(atoms=self.atoms, reltype=r, working_directory=self.working_directory, **kwargs)
 
     def optimize(self):
         for op in self.optimizers():

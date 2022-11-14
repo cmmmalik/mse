@@ -16,8 +16,8 @@ from HPCtools.hpc_tools3 import filterargs
 class Workflow:
 
     def __init__(self,
-                 atoms: Atoms,
                  encut: int or float,
+                 atoms: Atoms = None,
                  kpts: list or tuple or Iterable = None,
                  kplimits: [int, int] = None,
                  calculator_type: str = "gpaw",

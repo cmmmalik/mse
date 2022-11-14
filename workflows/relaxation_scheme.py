@@ -10,8 +10,8 @@ from mse.optimizer.optimizer import Moptimize
 class Workflow_relaxation(Baseworkflow):
 
     def __init__(self,
-                 atoms: Atoms,
                  working_directory: str,
+                 atoms: Atoms or None=None,
                  reltype: list or str = ["ions", "cell", "full"],
                  verbosity: int = 1,
                  dircheck: bool = True):

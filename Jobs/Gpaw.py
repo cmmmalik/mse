@@ -130,7 +130,7 @@ class Gpaw(ASEjob):
     def initialize(self):
         super(ASEjob, self).initialize()
         super(Gpaw, self).structure_write(
-            filename=os.path.join(self.working_directory, getattr(self.inputs,"poscarname", "POSCAR")),
+            filename=os.path.join(self.working_directory, getattr(self.inputs, "poscarname", "POSCAR")),
             format="vasp",
             vasp5=True)
 

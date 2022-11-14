@@ -14,6 +14,9 @@ from mse.calculator.ase import getnewcalc, setmodecalc
 
 parprint = partial(parprint, flush=True)
 
+def print_available_algorithms():
+    pass
+
 
 def optimize(atoms,
              reltype: str = 'ions',
@@ -22,6 +25,7 @@ def optimize(atoms,
              relaxalgorithm="BFGS",
              mask=None,
              verbose=True,
+             working_directory:str=".",
              **opargs):
     """
         wrapper function for relaxation
@@ -44,21 +48,22 @@ def optimize(atoms,
                        "The available algorithms are: {1}".format(relaxalgorithm, optimizer_algorithms.values()))
 
     parprint("Relaxation type: {}\nMask : {}\nOther relaxation parameters {}".format(reltype, mask, opargs))
+
     if reltype == 'full':
 
         uf = UnitCellFilter(atoms, mask=mask)
-        relax = optimizer_algorithms[relaxalgorithm](uf, logfile="rel-all.log", **opargs)
+        relax = optimizer_algorithms[relaxalgorithm](uf, logfile=path.join(working_directory, "rel-all.log"), **opargs)
         if verbose:
             parprint("Full relaxation")
 
     elif reltype == 'cell':
         sf = StrainFilter(atoms, mask=mask)
-        relax = optimizer_algorithms[relaxalgorithm](sf, logfile="rel-cell.log", **opargs)
+        relax = optimizer_algorithms[relaxalgorithm](sf, logfile=path.join(working_directory, "rel-cell.log"), **opargs)
         if verbose:
             parprint("Cell relaxation only")
 
     elif reltype == 'ions':  # ionic_relaxation
-        relax = optimizer_algorithms[relaxalgorithm](atoms, logfile="rel-ionic.log", **opargs)
+        relax = optimizer_algorithms[relaxalgorithm](atoms, logfile=path.join(working_directory,"rel-ionic.log"), **opargs)
         if verbose:
             parprint("Ions relaxation only")
 
