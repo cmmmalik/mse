@@ -2,8 +2,9 @@ from ase.db import connect as asedbconnect
 from ase.db.core import Database as dbCore
 from ase.io import read as aseread
 from ase.io.trajectory import Trajectory
-from ase.atoms import  Atoms
-from ase.parallel import paropen, world
+from ase.atoms import Atoms
+from ase.parallel import paropen
+from ase.spacegroup.symmetrize import FixSymmetry
 
 import pickle
 from gpaw import GPAW as gpawGPAW
@@ -292,6 +293,14 @@ class Gpaw(Gpawjob):
             pickle.dump(self, f)
 
     def _savetodb(self, *args, **kwargs):
+        # can not handle constraint that does not contain todict() method ...
+        # Adjust this into kwargs instead .....
+        if self.atoms.constraints and isinstance(self.atoms.constraints[0], FixSymmetry):
+            # at the moment ase does not have allow FIxsymmetry constraint atoms, storage in ase database,
+            # we we are removing it.
+            warnings.warn("Removing all constraints (Fix symmetry) from the atoms object, before saving into the database")
+            self.atoms.set_constraint()
+
         with asedbconnect(self.asedbname) as mydb:
             mydb.write(self.atoms, *args, **kwargs)
         print("Successfully written into the database")
@@ -397,6 +406,10 @@ class Gpaw(Gpawjob):
         self._smartwriteasedb(db, row=row, data=data, keys=keys)
 
     def _smartwriteasedb(self, db: str or dbCore, row, data: dict = {}, keys: dict = {}):
+
+        if self.atoms.constraints and isinstance(self.atoms.constraints[0], FixSymmetry):
+            warnings.warn("Removing all constraints (Fix symmetry) from the atoms object, before saving into the database")
+            self.atoms.set_constraint()
         try:
             db.write(row, data=data, **keys)
         except (AttributeError, IOError) as e:
@@ -518,7 +531,14 @@ class Gpaw(Gpawjob):
             if isinstance(v, Atoms):
                 v = v.todict()
             elif k == "_optimizer" or k == "row" or k == "_newrunscheme": # can't save these at the moment
-                continue
+                if hasattr(v, "todict"):
+                    v = v.todict()
+                elif hasattr(v, "asdict"):
+                    warnings.warn("asdict() method of {} is undepracated", DeprecationWarning)
+                    v = v.asdict()
+                else:
+                    print("Can not write {} instance of {} as {}".format(k, v, dict))
+                    continue
             dct[k] = v
         return dct
 

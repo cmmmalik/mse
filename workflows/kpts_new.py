@@ -12,6 +12,7 @@ from mse.Jobs.job import HPCjob
 from HPCtools.hpc_tools3 import filterargs
 # TODO: Implement proper Workflow classes (Next steps); Below is just a proof of concept
 
+# These workflows are just wrappers around calculator _gpaw_calc/ Jobs object......
 
 class Workflow:
 

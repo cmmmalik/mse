@@ -3,6 +3,7 @@ from ase.io import read
 from ase.constraints import UnitCellFilter, StrainFilter
 from ase.optimize.bfgs import BFGS
 from ase.optimize import QuasiNewton
+from ase.optimize.fire import FIRE
 from ase.optimize.bfgslinesearch import BFGSLineSearch as BFGSLS
 from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
 from ase.parallel import parprint
@@ -14,8 +15,16 @@ from mse.calculator.ase import getnewcalc, setmodecalc
 
 parprint = partial(parprint, flush=True)
 
+available_algorithms = {"QuasiNewton": QuasiNewton,
+                            "BFGS": BFGS,
+                            "CG": CG,
+                            "ScBFGS": ScBFGS,
+                            "BFGSLS": BFGSLS,
+                            "FIRE":FIRE}
+
+
 def print_available_algorithms():
-    pass
+    print(list(available_algorithms.keys()))
 
 
 def optimize(atoms,
@@ -38,7 +47,7 @@ def optimize(atoms,
     :return: atoms object
     """
 
-    optimizer_algorithms = {"QuasiNewton": QuasiNewton, "BFGS": BFGS, "CG": CG, "ScBFGS": ScBFGS, "BFGSLS": BFGSLS}
+    optimizer_algorithms = available_algorithms
     # relaxation algorithms
 
     if relaxalgorithm in optimizer_algorithms:
