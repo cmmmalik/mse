@@ -1,23 +1,27 @@
 from ase.atoms import Atoms
 from ase.spacegroup.symmetrize import refine_symmetry, check_symmetry
-from collections import Iterable
+from collections.abc import Iterable
 from copy import deepcopy
 import numpy as np
 import os
 import warnings
 
 from mse.calculator.gpaw_calc import Gpaw
+from mse.calculator.vasp_calc import VASP
 from mse.Jobs.job import HPCjob
+from HPCtools.hpc_tools3 import filterargs
 # TODO: Implement proper Workflow classes (Next steps); Below is just a proof of concept
 
+# These workflows are just wrappers around calculator _gpaw_calc/ Jobs object......
 
 class Workflow:
 
     def __init__(self,
-                 atoms: Atoms,
                  encut: int or float,
+                 atoms: Atoms = None,
                  kpts: list or tuple or Iterable = None,
                  kplimits: [int, int] = None,
+                 calculator_type: str = "gpaw",
                  verbosity: int = 1):
 
         assert kpts or kplimits
@@ -31,6 +35,7 @@ class Workflow:
 
         self._encut = encut
         self._atoms = atoms
+        self._calculator_type = calculator_type
         self.verbosity = verbosity
 
         self._wrkpaths = None
@@ -47,6 +52,10 @@ class Workflow:
     @property
     def kpts(self):
         return self._kpts
+
+    @property
+    def calculator_type(self):
+        return self._calculator_type
 
     @property
     def wrkpaths(self):
@@ -114,6 +123,18 @@ class Workflow:
         if self.verbosity >= 2:
             print("Debug:\nKpts: {}".format(Kpts))
 
+        if self.calculator_type == "gpaw":
+            Jobfunc = Gpaw
+        elif self.calculator_type == "vasp":
+            Jobfunc = VASP
+            warnings.warn("Mode inps:{}, will not be used".format(modeinps))
+            print("For VASP they are part of calcinps")
+            print("Cleaning....")
+            modeinps = dict()
+
+        else:
+            raise ValueError("Unknown {} calculator_type given".format(self.calculator_type))
+
         jobs = []
         for i, w in enumerate(self.wrkpaths):
             c_calcinps = deepcopy(calcinps)
@@ -122,7 +143,7 @@ class Workflow:
             c_modeinps = deepcopy(modeinps)
             c_modeinps.update({"encut": self.encut})
 
-            j = Gpaw(name=name,
+            j = Jobfunc(name=name,
                      working_directory=w,
                      atoms=self.atoms,
                      run_type=run_type,
@@ -187,12 +208,15 @@ class Workflow:
         for j in self.jobs:
             hpc = HPCjob(server=server, jobname=j.name, working_directory=j.working_directory)
             j.hpc = hpc
+            submitargs, prepargs = filterargs(hpc.server, **kwargs)
+
             j.submit_hpc(remove=remove,
                          backup=backup,
                          save_db=save_db,
                          dry_run=True,
-                         save_calc=save_calc, **kwargs)
-            hpc.prepare()
+                         save_calc=save_calc, **submitargs)
+
+            hpc.prepare(**prepargs)
 
     def submit(self):
         for j in self.jobs:
@@ -211,7 +235,7 @@ class Workflow:
         return self.read_Jobs(wrkpaths=self.wrkpaths)
 
 
-def filterargs(wf: Workflow, **kwargs):
+def filterargs_old(wf: Workflow, **kwargs):
 
     gen = wf.pre_setup_jobs.__code__
     gen = list(gen.co_varnames[:gen.co_argcount])

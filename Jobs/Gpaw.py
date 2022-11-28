@@ -10,7 +10,7 @@ from Database.ase_db import Savedb
 from mse.Jobs.job import ASEjob, HPCjob
 from mse.io.scripts import InterfaceGPAW
 import mse.system.directory as Simdirec
-from HPCtools_v2.hpc_tools3 import directorychange
+from HPCtools.hpc_tools3 import directorychange
 
 # TODO: Implement JOBsets
 # TODO: Implement job copy method
@@ -130,7 +130,7 @@ class Gpaw(ASEjob):
     def initialize(self):
         super(ASEjob, self).initialize()
         super(Gpaw, self).structure_write(
-            filename=os.path.join(self.working_directory, getattr(self.inputs,"poscarname", "POSCAR")),
+            filename=os.path.join(self.working_directory, getattr(self.inputs, "poscarname", "POSCAR")),
             format="vasp",
             vasp5=True)
 

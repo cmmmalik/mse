@@ -1,15 +1,19 @@
 import pickle
 import gpaw
 import argparse
+import warnings
+
 from ase.parallel import paropen, parprint as aseparprint, world
+
 from ase.db import connect as asedbconnect
 from copy import deepcopy
 from functools import partial
 import traceback
 import sys
 
+# from mse.calculator.gpaw_calc import Gpaw
 from mse.servertools.Slurm import putback_origin
-from HPCtools_v2.hpc_tools3 import HPCMain
+from HPCtools.hpc_tools3 import HPCMain
 
 parprint = partial(aseparprint, flush=True) # flush the buffers
 print = partial(print, flush=True)
@@ -24,7 +28,7 @@ def generate_runcmd(inputfile,
                     remove: bool = True,
                     envcmd: bool = None):
 
-    loc = "Simtools.wrapper.gpaw_wrap"
+    loc = "mse.wrapper.gpaw_wrap"
     runcmd = "mpirun gpaw python -m {}".format(loc)
     runcmd += " -pf {}".format(inputfile)
     runcmd += " --savecalc {}".format(save_calc)
@@ -74,20 +78,38 @@ def commandlineargs():
     return args
 
 
-def initialize_calc(job):
+def initialize_calc(job): #ToDo: this should be part of the job -----
 
-    calc = getattr(gpaw, job.calc)
-    mode = getattr(gpaw, job.mode)
+    CALC = getattr(gpaw, job.calc)
+    MODE = getattr(gpaw, job.mode)
     inputs = deepcopy(job.inputs)
 
+    calc = None
     modeargs = inputs["mode_args"]
 
     try:
         ecut = modeargs.pop("encut") # better to change this key to ecut
     except KeyError:
-        raise RuntimeError("Encut was not found")
+        warnings.warn("Encut was not provided", RuntimeWarning)
+        ecut = None
 
-    job.atoms.calc = calc(mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+    attach = inputs["calc_args"].pop("attach", None)
+
+    if job.restart:
+        from gpaw import restart
+        atoms, calc = restart(filename="calc.gpw", **inputs["calc_args"])
+        if job.atoms:
+            warnings.warn("Atoms object was found in the job, it will be overwritten with atoms read from calc.gpw ")
+
+        job.atoms = atoms
+        # job.atoms.calc = calc(restart="calc.gpw", mode=mode(ecut=ecut, **modeargs), **inputs["calc_args"])
+    if not calc:
+        calc = CALC(mode=MODE(ecut=ecut, **modeargs), **inputs["calc_args"])
+
+    if attach:
+        calc.attach(calc.write, **attach)
+
+    job.atoms.calc = calc
 
 
 def read_jobinfo(jobinfo: str = "job.info"):
@@ -146,13 +168,13 @@ def autosendback(remove:bool, backup:bool, envcmd:str, verbosity:int=0):
     world.barrier()  # wait for the master to finish.
 
 
-def savetodb(job):
+def savetodb(job, *args, **kwargs):
 
-    if world.rank == 0: # write only with master
+#    if world.rank == 0: # write only with master
         # with asedbconnect("out.db") as mydb:
         #     mydb.write(job.atoms)
     # parprint("Successfully written into the database")
-        job._savetodb()
+        job._savetodb(*args, **kwargs)
 
 
 def main():
@@ -180,7 +202,7 @@ def main():
         # write the rest of outputs anyway - do not raise the exception
 
     # save calculator_first
-    if savecalc:
+    if savecalc and not job.inputs["calc_args"].get("attach", None):
         try:
             job.atoms.calc.write("calc.gpw")
         except Exception as e:
@@ -197,6 +219,14 @@ def main():
     scf = job.atoms.calc.scf
     job.scf = scf
     job.atoms.calc = None
+    if job.newrunscheme:
+        if hasattr(job.newrunscheme, "calculator"):
+            job.newrunscheme.calculator = None
+
+        if hasattr(job.newrunscheme, "atoms"):
+            if hasattr(job.newrunscheme.atoms, "calc"):
+                if job.newrunscheme.atoms.calc:
+                    job.newrunscheme.atoms.calc = None
 
     with paropen(job.defaults_files["output"], mode="wb") as f: # write only the master
         pickle.dump(job, f)
@@ -206,7 +236,6 @@ def main():
 
 #         now go back to origin_host
 #         TODO: Do this in a better way, It's a work around
-
 
 if __name__ == "__main__":
 

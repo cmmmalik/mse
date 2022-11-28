@@ -2,6 +2,10 @@ from ase.db import connect as asedbconnect
 from ase.db.core import Database as dbCore
 from ase.io import read as aseread
 from ase.io.trajectory import Trajectory
+from ase.atoms import Atoms
+from ase.parallel import paropen
+from ase.spacegroup.symmetrize import FixSymmetry
+
 import pickle
 from gpaw import GPAW as gpawGPAW
 import os
@@ -16,21 +20,14 @@ from mse.system.directory import CD
 from mse.io.gpaw_io import Readparameters
 from mse.analysis.energies import energy_per_atom as simenergy_per_atom, \
     energy_per_formula as simenergy_per_formula
-from HPCtools_v2.hpc_tools3 import filterargs, directorychange
+from HPCtools.hpc_tools3 import filterargs, directorychange
 
-# TODO: add relaxation schemes
-# TODO: Add save_to_database function with columns keys of parameters. (See Gpawjob class and ase_db/ASE_IO)
+
+class PickleReadError(Exception):
+    pass
 
 
 class Gpaw(Gpawjob):
-
-    # defaults_inputs = {"calc_args": {"kpts": {"density": 4, "gamma": True},
-    #                    "xc": "PBE",
-    #                    "eigensolver": "rmm-diis",
-    #                    "occupations": {"name": "fermi-dirac", "width": 0.4}},
-    #                    "mode_args": {"encut": 500}}
-    # This is not a good approach for keeping a dictionary here like this
-    # Use mutable objects like tuple, etc.
 
     defaults_files = {"input": "inp.p",
                       "output": "out.p",
@@ -42,10 +39,11 @@ class Gpaw(Gpawjob):
     asedbname = "out.db"
 
     def __init__(self,
-                 name,
-                 working_directory=None,
-                 atoms=None,
-                 run_type: "static" or "relax" = "static",
+                 name: str,
+                 working_directory: str = None,
+                 atoms = None,
+                 restart: bool = False,
+                 run_type: "static" or "relax" or "workflow" = "static",
                  calcinps: dict = None,
                  modeinps: dict = None,
                  relaxinps: dict = None,
@@ -58,6 +56,10 @@ class Gpaw(Gpawjob):
         self.run_type = run_type
         self._optimizer = None
         self._newrunscheme = None
+
+        self._workflow = None
+        self.workflow_params = dict()
+        self._initialized_wrkflow = None
 
         if self.run_type == "static":
             self.inputs["calc_args"]["txt"] = "static.txt"
@@ -72,19 +74,26 @@ class Gpaw(Gpawjob):
             # set trajectory
             if kwargs.get("trajectory", False):
                 self.relax_inputs["trajectory"] = self.defaults_files["traj"]
+
+        elif self.run_type == "workflow":
+            wrkf = kwargs.get("workflow", False)
+            if wrkf:
+                self.set_workflow(wrkf)
+            wrkf_params = kwargs.get("workflow_params", dict())
+            self.workflow_params = wrkf_params.copy()
+            self._initialized_wrkflow = False
+
         else:
-            raise ValueError("run_type can have 'static' or 'relax' values, but got {}".format(self.run_type))
+            raise ValueError("run_type can have 'static' or 'relax' or 'workflow' values, but got {}".format(self.run_type))
 
         if isinstance(calcinps, dict):
             if calcinps is None:
                 calcinps = dict()
-
             self.inputs["calc_args"].update(calcinps)
 
         elif calcinps is not None:
             raise TypeError("'calcinps' must be an instance of {}, but found an instance of type {} ".format(dict,
                                                                                                              type(calcinps)))
-
         if isinstance(modeinps, dict):
             if modeinps is None:
                 modeinps = dict()
@@ -93,7 +102,7 @@ class Gpaw(Gpawjob):
         elif modeinps is not None:
             raise TypeError("'modeinps' must be an instance of {}, but found an instance of type {}".format(dict,
                                                                                                             type(modeinps)))
-
+        self._restart = restart
         # outputs
         self.converged = None
         self.traj = None
@@ -109,11 +118,10 @@ class Gpaw(Gpawjob):
     @staticmethod
     def _default_inputs():
 
-        out = {"calc_args": {"kpts": {"density": 4, "gamma": True},
-                                         "xc": "PBE",
-                                         "eigensolver": "rmm-diis",
-                                         "occupations": {"name": "fermi-dirac", "width": 0.4}},
-                           "mode_args": {"encut": 500}}
+        out = {"calc_args": {"xc": "PBE",
+                             "eigensolver": "rmm-diis",},
+                                #         "occupations": {"name": "fermi-dirac", "width": 0.4}}, # default smearing
+                           "mode_args": {}}
         return out
 
     @staticmethod
@@ -126,13 +134,23 @@ class Gpaw(Gpawjob):
 
     def relax_run(self):
         self.setoptimizer()
-        return self.optimizer.optimize()
+        try:
+            return self.optimizer.optimize()
+        except AttributeError:
+            return self.optimizer.run() # look for optimize and then run()
 
-  #  def relax_cell(self): # run should call this
- #       optimize(atoms=self.atoms, reltype="cell", fmax=self.fmax)
+    def workflow_run(self):
+        if not self._initialized_wrkflow:
+            self.instancialize_workflow()
+        return self.workflow.run()
 
-  #  def relax_all(self):
-  #      optimize()
+    def instancialize_workflow(self, pass_atoms:bool=True):
+        kwargs = {}
+        if pass_atoms is True:
+            kwargs["atoms"] = self.atoms
+        kwargs.update(self.workflow_params)
+        self._workflow = self.workflow(**kwargs)
+        self._initialized_wrkflow = True
 
     def run(self):
 
@@ -140,6 +158,9 @@ class Gpaw(Gpawjob):
             self.static_run()
         elif self.run_type == "relax":
             return self.relax_run()
+        elif self.run_type == "workflow":
+            return
+
         else:
             raise ValueError("Unknown value of 'run_type': {}".format(self.run_type))
 
@@ -157,6 +178,9 @@ class Gpaw(Gpawjob):
 
         self.run_check()
         submitargs, prepargs = filterargs(self.hpc.server, **kwargs)
+        print("Submission arguments: {}".format(submitargs))
+        print("Preparation arguments: {}".format(prepargs))
+
         if not "runcmd" in submitargs:
 
             submitargs["runcmd"] = generate_runcmd(inputfile=self.defaults_files["input"],
@@ -181,9 +205,11 @@ class Gpaw(Gpawjob):
 
         if not filename:
             filename = cls.defaults_files["output"]
-
-        with open(filename, "rb") as f:
-            job = pickle.load(f)
+        try:
+            with open(filename, "rb") as f:
+                job = pickle.load(f)
+        except Exception as error:
+            raise PickleReadError("Unable to pickle the job") from error
 
         try:
             filename = cls.defaults_files["calc"]
@@ -239,7 +265,6 @@ class Gpaw(Gpawjob):
 
     @classmethod
     def read_traj(cls, filename: str = None):
-
         if not filename:
             filename = cls.defaults_files["traj"]
 
@@ -264,12 +289,20 @@ class Gpaw(Gpawjob):
         return cls.ase_row_db().toatoms(True)
 
     def _save(self):
-        with open(self.defaults_files["input"], "wb") as f:
+        with paropen(self.defaults_files["input"], "wb") as f:
             pickle.dump(self, f)
 
-    def _savetodb(self):
+    def _savetodb(self, *args, **kwargs):
+        # can not handle constraint that does not contain todict() method ...
+        # Adjust this into kwargs instead .....
+        if self.atoms.constraints and isinstance(self.atoms.constraints[0], FixSymmetry):
+            # at the moment ase does not have allow FIxsymmetry constraint atoms, storage in ase database,
+            # we we are removing it.
+            warnings.warn("Removing all constraints (Fix symmetry) from the atoms object, before saving into the database")
+            self.atoms.set_constraint()
+
         with asedbconnect(self.asedbname) as mydb:
-            mydb.write(self.atoms)
+            mydb.write(self.atoms, *args, **kwargs)
         print("Successfully written into the database")
 
     def _dirchanger(self):
@@ -279,11 +312,19 @@ class Gpaw(Gpawjob):
         return cd
 
     def initialize(self):
+        # allow only master to write #
+        if self.restart: # save input and run
+            cd = self._dirchanger()
+            self._save()
+            cd.exit()
+            self._setinitialized()
+            return
+
         if os.path.exists(self.working_directory):
             super(Gpawjob, self).structure_write(filename=os.path.join(self.working_directory,
                                                 getattr(self.inputs, "poscarname", "POSCAR")),
-                                                 format="vasp",
-                                                 vasp5=True)
+                                                format="vasp",
+                                                vasp5=True)
         else:
             super(Gpaw, self).initialize()
 
@@ -296,7 +337,8 @@ class Gpaw(Gpawjob):
         if not self.newrunscheme:
             self.optimizer = Optimize(atoms=self.atoms, **self.relax_inputs)
         else:
-            self.optimizer = self.newrunscheme(atoms=self.atoms, **self.relax_inputs)
+            self._optimizer = self.newrunscheme(atoms=self.atoms, **self.relax_inputs) #just assign without anycheck
+            # on the newrunscheme
 
     @property
     def optimizer(self):
@@ -317,6 +359,20 @@ class Gpaw(Gpawjob):
     def newrunscheme(self, value):
         self._newrunscheme = value
 
+    @property
+    def workflow(self):
+        return self._workflow
+
+    @workflow.setter
+    def workflow(self, call):
+        if callable(call):
+            self._workflow = call
+        else:
+            ValueError("Value must be callable")
+
+    def set_workflow(self, call):
+        self.workflow = call
+
     @classmethod
     def help(cls):
         """
@@ -336,7 +392,7 @@ class Gpaw(Gpawjob):
             gatoms, data, keys = self._oldgpaw_reader()
 
             if gatoms != self.atoms:
-                warnings.warn(f"Atoms read by Gpaw reader and already-present in the instance are not same", ValueError)
+                warnings.warn("Atoms read by Gpaw reader and already-present in the instance are not same", ValueError)
             row = gatoms
 
         if not "rpath" in keys:
@@ -349,7 +405,11 @@ class Gpaw(Gpawjob):
         print("Row:\n{}".format(row))
         self._smartwriteasedb(db, row=row, data=data, keys=keys)
 
-    def _smartwriteasedb(self, db: str or dbCore, row, data, keys):
+    def _smartwriteasedb(self, db: str or dbCore, row, data: dict = {}, keys: dict = {}):
+
+        if self.atoms.constraints and isinstance(self.atoms.constraints[0], FixSymmetry):
+            warnings.warn("Removing all constraints (Fix symmetry) from the atoms object, before saving into the database")
+            self.atoms.set_constraint()
         try:
             db.write(row, data=data, **keys)
         except (AttributeError, IOError) as e:
@@ -450,7 +510,7 @@ class Gpaw(Gpawjob):
     @staticmethod
     def _addkpdens_kpts(keys: dict):
 
-        kpts = keys.pop("kpts")
+        kpts = keys.pop("kpts", None)
 
         out = {}
         if not kpts:
@@ -464,3 +524,24 @@ class Gpaw(Gpawjob):
             out["kpts"] = kpts
 
         return out
+
+    def todict(self):
+        dct = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, Atoms):
+                v = v.todict()
+            elif k == "_optimizer" or k == "row" or k == "_newrunscheme": # can't save these at the moment
+                if hasattr(v, "todict"):
+                    v = v.todict()
+                elif hasattr(v, "asdict"):
+                    warnings.warn("asdict() method of {} is undepracated", DeprecationWarning)
+                    v = v.asdict()
+                else:
+                    print("Can not write {} instance of {} as {}".format(k, v, dict))
+                    continue
+            dct[k] = v
+        return dct
+
+    @property
+    def restart(self):
+        return self._restart

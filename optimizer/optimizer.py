@@ -1,9 +1,10 @@
 import ase.atoms
+from ase.spacegroup.symmetrize import FixSymmetry
 from itertools import cycle as itcycle
 from typing import Iterable
 import warnings
 
-from mse.calculator.ase import getnewcalc, setmodecalc
+from mse.calculator.ase import getnewcalc, setmodecalc, resetmodecalc
 from mse.optimizer.gpaw_functions import get_dedecut as gget_dedecut, optimize as goptimize
 
 
@@ -23,22 +24,24 @@ class Optimize:
     default_parameters = (("fmax", 0.01,),
                           ("algorithm", "BFGS",),
                           ("trajectory", None,),
-                          )
+                          ("mask", None,))
 
     def __init__(self, atoms: ase.atoms,
                  reltype: str or None = "pos",
+                 working_directory:str=".",
                  **kwargs):
 
         self._atoms = atoms
         self._reltype = reltype
         self.parameters = dict(self.default_parameters)
+        self.working_directory=working_directory
 
-        aargs = self.allowed_args()
+        # aargs = self.allowed_args()
 
-        for k in kwargs:
-            if k not in aargs:
-                display = ",".join(aargs)
-                raise ValueError(f"Invalid keyword argument {k}, allowed arguments are {display}")
+        # for k in kwargs:
+        #    if k not in aargs:
+        #        display = ",".join(aargs)
+        #        raise ValueError(f"Invalid keyword argument {k}, allowed arguments are {display}")
 
         self.steps = kwargs.get("steps", None)
         upde = None
@@ -48,13 +51,14 @@ class Optimize:
         self._update_dedecut = kwargs.get("update_dedecut", upde)
         self.cycle = kwargs.get("cycle", False)
 
-        for k in self.parameters.keys():
-            self.parameters[k] = kwargs.get(k, self.parameters[k])
+        for k, v in self.parameters.items():
+            self.parameters[k] = kwargs.get(k, v)
+
 
     @classmethod
     def allowed_args(cls):
         args, _ = zip(*cls.default_parameters)
-        return ["steps", "update_dedecut", "cycle", "mask"] + list(args)
+        return ["steps", "update_dedecut", "cycle"] + list(args)
 
     @property
     def atoms(self):
@@ -101,11 +105,12 @@ class Optimize:
         conv = goptimize(self.atoms,
                          reltype=self.reltype,
                          relaxalgorithm=self.parameters["algorithm"],
+                         working_directory=self.working_directory,
                          **kwargs)
         return conv
 
     def get_dedecut(self):
-        ncalc = getnewcalc(self.atoms.calc)
+        ncalc = getnewcalc(self.atoms.calc, txt="dedecut.txt")
         # Only for gpaw this will work
         encut = ncalc.todict()["mode"]["ecut"]
         dedecut = gget_dedecut(self.atoms.copy(), encut=encut, calc=ncalc)
@@ -164,7 +169,7 @@ class Optimize:
                 return conv
 
     def _updatemodecalc(self, dedecut, **kwargs):
-        setmodecalc(self.atoms.calc, dedecut=dedecut, **kwargs)
+        resetmodecalc(self.atoms.calc, dedecut=dedecut, **kwargs)
 
     @property
     def update_dedecut(self):
@@ -180,14 +185,16 @@ class Optimize:
 
 class Moptimize:
 
-    def __init__(self, atoms: ase.atoms, reltype: Iterable = ("ions", "cell", "full"), **kwargs):
+    def __init__(self, atoms: ase.atoms,
+                 working_directory:str=".",
+                 reltype: Iterable = ("ions", "cell", "full"), **kwargs):
 
         self._atoms = atoms
         self.parameters = kwargs
         self.reltype = reltype
+        self.working_directory=working_directory
 
     def optimizers(self):
-
         for i, r in enumerate(self.reltype):
             kwargs = {}
             for key, value in self.parameters.items():
@@ -195,7 +202,7 @@ class Moptimize:
                     kwargs[key] = value[i]
                 else:
                     kwargs[key] = value
-            yield Optimize(atoms=self.atoms, reltype=r, **kwargs)
+            yield Optimize(atoms=self.atoms, reltype=r, working_directory=self.working_directory, **kwargs)
 
     def optimize(self):
         for op in self.optimizers():

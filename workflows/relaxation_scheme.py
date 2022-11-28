@@ -1,3 +1,6 @@
+import os
+import pickle
+
 from ase.atoms import Atoms
 
 from mse.workflows.base import Baseworkflow
@@ -7,8 +10,8 @@ from mse.optimizer.optimizer import Moptimize
 class Workflow_relaxation(Baseworkflow):
 
     def __init__(self,
-                 atoms: Atoms,
                  working_directory: str,
+                 atoms: Atoms or None=None,
                  reltype: list or str = ["ions", "cell", "full"],
                  verbosity: int = 1,
                  dircheck: bool = True):
@@ -56,3 +59,9 @@ class Workflow_relaxation(Baseworkflow):
         self.set_optimizer()
 
         return self.job
+
+    @classmethod
+    def restart(cls, working_directory: str = "."):
+        with open(os.path.join(working_directory, "inp.p"), "rb") as pf:
+            job = pickle.load(pf)
+

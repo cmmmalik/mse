@@ -6,7 +6,7 @@ import time
 from mse.servertools.ssh import ShellHandler
 import warnings
 
-from HPCtools_v2.IO import Logger
+from HPCtools.IO import Logger
 
 
 def wrap_path(wraper="gpaw_wrap", host=None):
@@ -26,7 +26,7 @@ def wrap_path(wraper="gpaw_wrap", host=None):
 
     if err:
         raise RuntimeError(f"Encountered error: {err}")
-    _, out, err = terminal.clean_execute(f"python -c 'from Simtools.wrapper import {wraper}\n" 
+    _, out, err = terminal.clean_execute(f"python -c 'from mse.wrapper import {wraper}\n" 
                                              "print(gpaw_wrap.__file__)'")
     if err:
         raise RuntimeError(f"Encountered an error: {err}")
@@ -77,12 +77,12 @@ def putback_origin(jobname:str,
         _, out, err = terminal.clean_execute(envcmds)
 # TODO: Put this in an argument in extras, as environmental setups
 
-    #cmd += [f"python -c 'from Simtools.Jobs.job import HPCjob\n" + \
+    #cmd += [f"python -c 'from mse.Jobs.job import HPCjob\n" + \
      #     f"hpc = HPCjob(jobname=None, working_directory=\"{host_directory}\")\n" + \
      #     f"print(\"Fetching....\")\n" + \
      #     f"hpc.fetch_hpc()'"]
 
-    cmd = "python -u -m Simtools.servertools.Slurm"
+    cmd = "python -u -m mse.servertools.Slurm"
     cmd += " -p {}".format(host_directory)
     cmd += " -b {}".format(backup)
     cmd += " -r {}".format(remove)

@@ -40,7 +40,11 @@ class Readparameters:
 
                 elif line.startswith("Occupation numbers:"): #Sometimes, we don't have this line, in case of default,
                     #written after wavefunction info
-                    nxtline = txtfile.__next__()
+                    if line.endswith("numbers:"):
+                        nxtline = txtfile.__next__()
+                    else:
+                        nxtline = line
+
                     nxtline = nxtline.strip().split(":", maxsplit=1)
                     # if self.parameters is None:
                     #     self.parameters = {}
@@ -89,7 +93,7 @@ class Readparameters:
             self._parse_k_points()
 
     def __repr__(self):
-        st = "{name:<8}, parameters={self.parameters}," \
+        st = "{self.name:<8}, parameters={self.parameters}," \
              "inputs(txtfile)={self.inputs}," \
              "kp(.py)={self.kp}"
 

@@ -266,8 +266,8 @@ def directorychange(func):
                     raise OSError
         try:
             out = func(ins, *args, **kwargs)
-        except Exception:
-            raise Exception("Encountered an exception")
+        except Exception as exc:
+            raise exc
 
         finally:
             try:

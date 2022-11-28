@@ -14,7 +14,7 @@ import warnings
 
 from mse.system import directory
 from Database.ASE_io import Gpawjobdb_read
-import HPCtools_v2.hpc_tools3 as HPC
+import HPCtools.hpc_tools3 as HPC
 
 # TODO: add function for cleaning the contents of the directory instead of the directory itself.
 
@@ -264,10 +264,10 @@ class ASEjob(Corejob):
         return rows
 
     @staticmethod
-    def _smartwriteasedb(db: str or dbCore, row, data, keys):
+    def _smartwriteasedb(db: str or dbCore, row, data: dict = {}, keys: dict = {}, **kwargs):
 
         if isinstance(db, dbCore):
-            db.write(row, data=data, **keys)
+            db.write(row, data=data, key_value_pairs=keys, **kwargs)
         else:
             with asedbconnect(db) as mydb:
                 mydb.write(row, data=data, **keys)
@@ -301,6 +301,11 @@ class ASEjob(Corejob):
                      verbosity=verbosity)
         self.hpc = hpc
         return hpc
+
+    def initialize(self):
+        if not os.path.exists(self.working_directory):
+            super(ASEjob, self).initialize()
+        self.structure_write(filename=os.path.join(self.working_directory, "POSCAR"))
 
 
 class HPCjob:
@@ -347,7 +352,7 @@ class HPCjob:
         if self.working_directory:
             st += "working_directory:{},".format(self.working_directory)
         if self.main_directory:
-            st += "main_directory:{},".format(self.main_directory)
+            st += "main_directory:{}\n".format(self.main_directory)
         if self.server:
             st += "server:{}".format(self.server)
 
@@ -382,9 +387,9 @@ class HPCjob:
                 **kwargs):
         self.server.prepare(random_folder=random_folder, folder_name=folder_name, **kwargs)
 
-    def submit(self):
+    def submit(self, check:bool=True):
         try:
-            self.server.submit()
+            self.server.submit(check=check)
         except Exception:
             raise Exception("Couldn't submit the {}".format(self.jobname))
         finally:

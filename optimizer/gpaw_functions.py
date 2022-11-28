@@ -3,6 +3,7 @@ from ase.io import read
 from ase.constraints import UnitCellFilter, StrainFilter
 from ase.optimize.bfgs import BFGS
 from ase.optimize import QuasiNewton
+from ase.optimize.fire import FIRE
 from ase.optimize.bfgslinesearch import BFGSLineSearch as BFGSLS
 from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
 from ase.parallel import parprint
@@ -14,6 +15,17 @@ from mse.calculator.ase import getnewcalc, setmodecalc
 
 parprint = partial(parprint, flush=True)
 
+available_algorithms = {"QuasiNewton": QuasiNewton,
+                            "BFGS": BFGS,
+                            "CG": CG,
+                            "ScBFGS": ScBFGS,
+                            "BFGSLS": BFGSLS,
+                            "FIRE":FIRE}
+
+
+def print_available_algorithms():
+    print(list(available_algorithms.keys()))
+
 
 def optimize(atoms,
              reltype: str = 'ions',
@@ -22,6 +34,7 @@ def optimize(atoms,
              relaxalgorithm="BFGS",
              mask=None,
              verbose=True,
+             working_directory:str=".",
              **opargs):
     """
         wrapper function for relaxation
@@ -34,7 +47,7 @@ def optimize(atoms,
     :return: atoms object
     """
 
-    optimizer_algorithms = {"QuasiNewton": QuasiNewton, "BFGS": BFGS, "CG": CG, "ScBFGS": ScBFGS, "BFGSLS": BFGSLS}
+    optimizer_algorithms = available_algorithms
     # relaxation algorithms
 
     if relaxalgorithm in optimizer_algorithms:
@@ -43,20 +56,23 @@ def optimize(atoms,
         raise KeyError("The {0} is invalid or  not found."
                        "The available algorithms are: {1}".format(relaxalgorithm, optimizer_algorithms.values()))
 
+    parprint("Relaxation type: {}\nMask : {}\nOther relaxation parameters {}".format(reltype, mask, opargs))
+
     if reltype == 'full':
+
         uf = UnitCellFilter(atoms, mask=mask)
-        relax = optimizer_algorithms[relaxalgorithm](uf, logfile="rel-all.log", **opargs)
+        relax = optimizer_algorithms[relaxalgorithm](uf, logfile=path.join(working_directory, "rel-all.log"), **opargs)
         if verbose:
             parprint("Full relaxation")
 
     elif reltype == 'cell':
         sf = StrainFilter(atoms, mask=mask)
-        relax = optimizer_algorithms[relaxalgorithm](sf, logfile="rel-cell.log", **opargs)
+        relax = optimizer_algorithms[relaxalgorithm](sf, logfile=path.join(working_directory, "rel-cell.log"), **opargs)
         if verbose:
             parprint("Cell relaxation only")
 
     elif reltype == 'ions':  # ionic_relaxation
-        relax = optimizer_algorithms[relaxalgorithm](atoms, logfile="rel-ionic.log", **opargs)
+        relax = optimizer_algorithms[relaxalgorithm](atoms, logfile=path.join(working_directory,"rel-ionic.log"), **opargs)
         if verbose:
             parprint("Ions relaxation only")
 
@@ -93,33 +109,38 @@ def get_modify_calculator(calc = None,
     :return: calculator object
     """
 
-    parameters = { "xc": "PBE",
-                   "swidth": None,
-                   "mixer": None,
-                   "eigensolver": "dav",
-                   "psp": None,
-                   "spin": None,
-                   "U": None,
-                   "poissonsolver": None,
-                   "parallel": None }
+    par_args = ( "xc",
+                   "swidth",
+                   "mixer",
+                   "eigensolver",
+                   "psp",
+                   "spin",
+                   "U",
+                   "poissonsolver" ,
+                   "parallel") # not being used anymore
 
-    pwparameters = {"cell": None,
-                    "gammacentered": False,
-                    "pulay_stress": None,
-                    "force_complex_dtype": False }
+    pwargs = ("cell",
+              "gammacentered",
+              "pulay_stress",
+              "force_complex_dtype" )
+
+
+    parameters = {}
+    pwparameters = {}
 
     for key, value in kwargs.items():
 
-        if key in pwparameters:
+        if key in pwargs:
             pwparameters[key] = value
             initializepw = True
 
-        elif key in parameters:
+        else:
             parameters[key] = value
 
-        else:
+    if kp is not None:
+        parameters["kpts"] = kp
 
-            raise KeyError("Found Unknown/Invalid argument '%s'" % key)
+    parameters["txt"] = txt
 
     if encut is not None or dedecut is not None:
         resetpw = True
@@ -128,44 +149,47 @@ def get_modify_calculator(calc = None,
         assert encut
 
     if resetpw:
-        modePW = PW(encut, cell=pwparameters["cell"], gammacentered=pwparameters["gammacentered"], pulay_stress=pwparameters["pulay_stress"], dedecut=dedecut, force_complex_dtype=pwparameters["force_complex_dtype"])
+        modePW = PW(encut, **pwparameters)
 
     if calc is None:
-        calc = GPAW(mode=modePW, xc=parameters["xc"], eigensolver=parameters["eigensolver"], parallel=parameters["parallel"])
+        calc = GPAW(mode=modePW, **parameters)
+        return calc
 
     elif resetpw == True:   # Used Calculator
-        parprint("Setting calc mode\n{}".format(modePW), flush=True)
+        parprint("Setting calc mode", flush=True)
         calc.set(mode=modePW)
 
-    if kp is not None:
-        calc.set(kpts=kp)
-        parprint("setting kpts to %s" % kp, flush=True)
+    # if kp is not None:
+    #     calc.set(kpts=kp)
+    #     parprint("setting kpts to %s" % kp, flush=True)
 
-    if parameters["U"] is not None:
-        calc.set(setups=parameters["U"])
 
-    if parameters["psp"] is not None:
-        calc.set(setups=parameters["psp"])
-        parprint("setting pseudopotential(psp) %s" %psp, flush=True)
+    parprint("Setting Parameters:\n{}".format(parameters))
+    calc.set(**parameters)
 
-    if parameters["swidth"] is not None:
-        calc.set(occupations=FermiDirac(parameters["swidth"]))
-        parprint("setting smearing-width: %s" % parameters["swidth"])
 
-    if parameters["spin"] is not None:
-        calc.set(spinpol=True)
-        parprint("setting spin to %s" % parameters["spin"], flush=True)
 
-    if parameters["poissonsolver"] is not None:
-        calc.set(poissonsolver=parameters["poissonsolver"])
-
-    if parameters["mixer"] is not None:
-        attach_mixer(calc, parameters["mixer"])
-        parprint("calling the mixer function:", flush=True)
-
-    calc.set(txt=txt)
-
-    return calc
+    # if parameters["U"] is not None:
+    #     calc.set(setups=parameters["U"])
+    #
+    # if parameters["psp"] is not None:
+    #     calc.set(setups=parameters["psp"])
+    #     parprint("setting pseudopotential(psp) %s" %psp, flush=True)
+    #
+    # if parameters["swidth"] is not None:
+    #     calc.set(occupations=FermiDirac(parameters["swidth"]))
+    #     parprint("setting smearing-width: %s" % parameters["swidth"])
+    #
+    # if parameters["spin"] is not None:
+    #     calc.set(spinpol=True)
+    #     parprint("setting spin to %s" % parameters["spin"], flush=True)
+    #
+    # if parameters["poissonsolver"] is not None:
+    #     calc.set(poissonsolver=parameters["poissonsolver"])
+    #
+    # if parameters["mixer"] is not None:
+    #     attach_mixer(calc, parameters["mixer"])
+    #     parprint("calling the mixer function:", flush=True)
 
 
 def attach_mixer(calc, mixer):
@@ -195,7 +219,6 @@ def attach_mixer(calc, mixer):
 def get_dedecut(atoms,
                 encut,
                 calc,
-                decimtol: int = 8,
                 **kwargs):
 
 
@@ -223,20 +246,20 @@ def get_dedecut(atoms,
     verbose = defaultparameters["verbose"]
 
     for icut in [encut-step, encut+step]:
-
+        ats = atoms.copy()
         parprint("Encut in loop is %s" % icut, flush=True)
-        calc = get_modify_calculator(encut=icut,
-                                     calc=calc,
-                                     txt="dedecut-{}-{}.txt".format(icut, defaultparameters["suffixf"]))
-        atoms.set_calculator(calc)
-        e.append(atoms.get_potential_energy())
+        get_modify_calculator(encut=icut,
+                              calc=calc,
+                              txt="dedecut.txt".format(icut, defaultparameters["suffixf"]))
+
+        ats.set_calculator(calc)
+        e.append(ats.get_potential_energy())
 
     dedecut = (e[1]-e[0])/(2*step)
-    dedecut = round(dedecut, decimtol)
 
     if verbose:
         parprint("energy at two different cutoffs: {}".format(e), flush=True)
-        parprint("pulay stress correction is {}".format(dedecut), flush=True)
+        parprint("Pulay stress correction is {}".format(dedecut), flush=True)
 
     return dedecut
 
