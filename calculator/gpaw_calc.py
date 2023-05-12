@@ -571,8 +571,8 @@ class Gpaw(Gpawjob):
                   calcinps=dct["inputs"]["calc_args"],
                   modeinps=dct["inputs"]["mode_args"])
 
-        for k,v in dct.items():
-            if k in ["_name", "_working_directory",] or not k.startswith("@"):
+        for k, v in dct.items():
+            if k in ["_name", "_working_directory",] or k.startswith("@"):
                 continue
             elif k == "_atoms":
                 v = Atoms.fromdict(v)
