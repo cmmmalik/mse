@@ -20,3 +20,26 @@ def get_kpoints_from_density(density: int or float,
 
     return n_size
 
+
+def get_size_ak(n_ak:int or float,
+                cell,
+                axis:int=0,
+                even:bool=None):
+    """
+    Takes grid size(number of kpoints) along principle axis (given by 'axis', e.g. 0 for a lattice vector)
+    and gives appropriate gride size of kpoints by calculating size along other two principle direction.
+     .
+    :param n_ak: int
+    :param cell: atoms cell.
+    :return:
+    """
+    lengths = cell.lengths()
+    na = n_ak*lengths[axis]
+    size = np.round(na/lengths).astype(int)
+    if even is not None:
+        if even:
+            size = (np.ceil(size/2.0)*2.0).astype(int)
+        else:
+            size = np.ceil(size).astype(int)
+    # size = np.ceil([n_ak, n_bk, n_zk])
+    return size
