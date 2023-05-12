@@ -9,6 +9,8 @@ from ase.spacegroup.symmetrize import FixSymmetry
 import pickle
 from gpaw import GPAW as gpawGPAW
 import os
+import json
+from monty.json import MontyDecoder
 import warnings
 
 from Database.ase_db import Savedb
@@ -566,6 +568,8 @@ class Gpaw(Gpawjob):
 
     @classmethod
     def from_dict(cls, dct):
+        dct["inputs"] = MontyDecoder().process_decoded(dct["inputs"])
+
         obj = cls(name=dct["_name"],
                   working_directory=dct["_working_directory"],
                   calcinps=dct["inputs"]["calc_args"],
@@ -575,10 +579,19 @@ class Gpaw(Gpawjob):
             if k in ["_name", "_working_directory",] or k.startswith("@"):
                 continue
             elif k == "_atoms":
-                v = Atoms.fromdict(v)
+                v = Atoms.fromdict(MontyDecoder().process_decoded(v))
             setattr(obj, k, v)
 
         return obj
+
+    def tojson(self):
+        from monty.json import MontyEncoder
+        return json.dumps(self, cls=MontyEncoder)
+
+    @classmethod
+    def fromjson(cls, jstring):
+        dct = json.loads(jstring, cls=MontyDecoder)
+        return cls.from_dict(dct)
 
     @property
     def restart(self):
