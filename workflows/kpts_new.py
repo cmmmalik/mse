@@ -6,8 +6,6 @@ import numpy as np
 import os
 import warnings
 
-from mse.calculator.gpaw_calc import Gpaw
-from mse.calculator.vasp_calc import VASP
 from mse.Jobs.job import HPCjob
 from HPCtools.hpc_tools3 import filterargs
 # TODO: Implement proper Workflow classes (Next steps); Below is just a proof of concept
@@ -124,8 +122,12 @@ class Workflow:
             print("Debug:\nKpts: {}".format(Kpts))
 
         if self.calculator_type == "gpaw":
+            from mse.calculator.gpaw_calc import Gpaw
+
             Jobfunc = Gpaw
         elif self.calculator_type == "vasp":
+            from mse.calculator.vasp_calc import VASP
+
             Jobfunc = VASP
             warnings.warn("Mode inps:{}, will not be used".format(modeinps))
             print("For VASP they are part of calcinps")
@@ -224,6 +226,7 @@ class Workflow:
 
     @staticmethod
     def read_Jobs(wrkpaths:list):
+        from mse.calculator.gpaw_calc import Gpaw
         jobs = []
         for p in wrkpaths:
             j = Gpaw.read_job(working_directory=p)
