@@ -48,6 +48,18 @@ class Gpaw(Gpawjob):
                  modeinps: dict = None,
                  relaxinps: dict = None,
                  **kwargs):
+        """
+        ToDo: The class is using pickle at th moment. Need to use ase.ulm or todict() also to store it.
+        :param name:
+        :param working_directory:
+        :param atoms:
+        :param restart:
+        :param run_type:
+        :param calcinps:
+        :param modeinps:
+        :param relaxinps:
+        :param kwargs:
+        """
 
         super(Gpaw, self).__init__(name=name, working_directory=working_directory, atoms=atoms)
         self.calc = "GPAW"
@@ -159,7 +171,7 @@ class Gpaw(Gpawjob):
         elif self.run_type == "relax":
             return self.relax_run()
         elif self.run_type == "workflow":
-            return
+            return self.workflow_run()
 
         else:
             raise ValueError("Unknown value of 'run_type': {}".format(self.run_type))
@@ -539,8 +551,34 @@ class Gpaw(Gpawjob):
                 else:
                     print("Can not write {} instance of {} as {}".format(k, v, dict))
                     continue
+
+            elif k == "_working_directory":
+                v = str(v)
             dct[k] = v
         return dct
+
+    def as_dict(self):
+        dct = {}
+        dct["@module"] = self.__class__.__module__
+        dct["@class"] = self.__class__.__name__
+        dct.update(self.todict())
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+        obj = cls(name=dct["_name"],
+                  working_directory=dct["_working_directory"],
+                  calcinps=dct["inputs"]["calc_args"],
+                  modeinps=dct["inputs"]["mode_args"])
+
+        for k,v in dct.items():
+            if k in ["_name", "_working_directory",] or not k.startswith("@"):
+                continue
+            elif k == "_atoms":
+                v = Atoms.fromdict(v)
+            setattr(obj, k, v)
+
+        return obj
 
     @property
     def restart(self):
