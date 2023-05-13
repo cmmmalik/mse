@@ -12,6 +12,7 @@ from HPCtools.hpc_tools3 import filterargs
 
 # These workflows are just wrappers around calculator _gpaw_calc/ Jobs object......
 
+
 class Workflow:
 
     def __init__(self,
@@ -31,7 +32,7 @@ class Workflow:
                 raise ValueError("Expected a list or tuple of two values, but got {}".format(kplimits))
             self._kpts = np.arange(kplimits[0], kplimits[-1])
 
-        self._encut = encut
+        self.encut = encut
         self._atoms = atoms
         self._calculator_type = calculator_type
         self.verbosity = verbosity
@@ -46,6 +47,10 @@ class Workflow:
     @property
     def encut(self):
         return self._encut
+
+    @encut.setter
+    def encut(self, value:int or float):
+        self._encut = value
 
     @property
     def kpts(self):
