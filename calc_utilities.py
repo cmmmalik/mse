@@ -1,6 +1,8 @@
 from ase.cell import Cell as asecell
 import numpy as np
 
+import warnings
+
 
 def get_kpoints_from_density(density: int or float,
                              cell,
@@ -14,11 +16,33 @@ def get_kpoints_from_density(density: int or float,
     r_cell = 2*np.pi*r_cell
     n_size = r_cell*density
     if even:
-        n_size = np.ceil(n_size/2.0)*2.0
+        n_size = (np.ceil(n_size/2.0)*2.0).astype(int)
     else:
-        n_size = np.ceil(n_size)
+        n_size = np.ceil(n_size).astpye(int)
 
     return n_size
+
+
+def get_density_from_kpoints(kpts:list or tuple,
+                             cell,
+                             even:bool=False):
+    if not isinstance(cell, asecell):
+        cell = asecell(cell)
+
+    if even:
+        kpts = np.floor(kpts/2.0)*2.0
+
+    r_cell = 2*np.pi*cell.reciprocal().lengths()
+    density = np.asarray(kpts)/r_cell
+
+    density = np.floor(density).astype(int)
+
+    if len(np.unique(density)) != 1:
+        warnings.warn("density values are different....")
+        print(density)
+        return np.min(density)
+
+    return density[0]
 
 
 def get_size_ak(n_ak:int or float,
