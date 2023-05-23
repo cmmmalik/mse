@@ -7,6 +7,8 @@ import warnings
 from mse.calculator.ase import getnewcalc, setmodecalc, resetmodecalc
 from mse.optimizer.gpaw_functions import get_dedecut as gget_dedecut, optimize as goptimize
 
+import json
+from monty.json import MontyDecoder, MontyEncoder
 
 # TODO: test this.
 #  expecting changes in the atoms here, should also reflect in the upper levels.
@@ -24,7 +26,8 @@ class Optimize:
     default_parameters = (("fmax", 0.01,),
                           ("algorithm", "BFGS",),
                           ("trajectory", None,),
-                          ("mask", None,))
+                          ("mask", None,),
+                          ("db", None))
 
     def __init__(self, atoms: ase.atoms,
                  reltype: str or None = "pos",
@@ -32,7 +35,7 @@ class Optimize:
                  **kwargs):
 
         self._atoms = atoms
-        self._reltype = reltype
+        self.reltype = reltype
         self.parameters = dict(self.default_parameters)
         self.working_directory=working_directory
 
@@ -53,7 +56,8 @@ class Optimize:
 
         for k, v in self.parameters.items():
             self.parameters[k] = kwargs.get(k, v)
-
+        if kwargs.get("db", None):
+            self.parameters["db"] = "optimization.db"
 
     @classmethod
     def allowed_args(cls):
@@ -182,6 +186,41 @@ class Optimize:
         else:
             raise ValueError(f"Expected an instance of {bool}, but got {type(value)}")
 
+    def todict(self):
+        dct = {}
+        for k,v in self.__dict__.items():
+            if isinstance(v, ase.atoms.Atoms):
+                v=v.todict()
+            dct[k] = v
+
+        return dct
+
+    def as_dict(self):
+        dct = {"@module": self.__class__.__module__,"@class": self.__class__.__name__}
+        dct.update(self.todict())
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+
+        obj = cls(atoms=ase.atoms.Atoms.fromdict(MontyDecoder().process_decoded(dct["_atoms"])),
+                  reltype=dct["_reltype"],
+                  working_directory=dct.get("working_directory"),
+                  )
+        for k,v in dct.items():
+            if k in ["_atoms", "_reltype", "working_directory"]:
+                continue
+            setattr(obj, k, v)
+        return obj
+
+    def tojson(self):
+        return json.dumps(self, cls=MontyEncoder)
+
+    @classmethod
+    def fromjson(cls, jsonstring):
+        obj = json.loads(jsonstring, cls=MontyDecoder)
+        return obj
+
 
 class Moptimize:
 
@@ -225,6 +264,42 @@ class Moptimize:
     def atoms(self):
         return self._atoms
 
+    def to_dict(self):
+        dct = {}
+        for k,v in self.__dict__.items():
+            if isinstance(v, ase.atoms.Atoms):
+                v=v.todict()
+
+            dct[k] =v
+
+        return dct
+
+    def as_dict(self):
+        dct = {"@module": self.__class__.__module__, "@class": self.__class__.__name__}
+        dct.update(self.to_dict())
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+        dct = MontyDecoder().process_decoded(dct)
+        obj = cls(atoms=ase.atoms.Atoms.fromdict(dct["_atoms"]),
+                  working_directory=dct["working_directory"],
+                  reltype=dct["_reltype"])
+
+        for k,v in dct.items():
+            if  k in ["_atoms", "_reltype", "working_directory"]:
+                continue
+
+            setattr(obj, k, v)
+        return obj
+
+    def tojson(self):
+        return json.dumps(self, cls=MontyEncoder)
+
+    @classmethod
+    def fromjson(cls, jsonstring):
+        obj = json.loads(jsonstring, cls=MontyDecoder)
+        return obj
 
 
 
