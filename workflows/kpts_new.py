@@ -92,13 +92,17 @@ class Workflow:
         if symmetrize:
             self.refine_symmetry(symprec=symprec)
 
-    def get_kpts(self, kpts: dict or tuple = ("gamma", True)):
+    def get_kpts(self, kpts: dict or tuple = ("gamma", None,)):
 
         if not isinstance(kpts, dict):
             try:
                 kpts = dict(kpts)
             except (TypeError, ValueError) as error:
                 kpts = dict((kpts,))
+
+        if kpts.get("gamma") is None:
+            kpts.pop("gamma")
+
         if self.verbosity >= 2:
             print("Debug:\nkpts: {}".format(kpts))
         Kpts = []
@@ -111,7 +115,7 @@ class Workflow:
 
     def setup_jobs(self,
                    name: str,
-                   kpts: dict or tuple = ("gamma", True),
+                   kpts: dict or tuple = ("gamma", None,),
                    modeinps: dict = None,
                    calcinps: dict = None,
                    run_type: 'static' or 'relax' = "static",
