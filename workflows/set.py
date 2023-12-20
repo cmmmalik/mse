@@ -5,6 +5,7 @@ from ase.db import row
 from mse.analysis.aserows import get_calc_parameters, get_args
 from mse.workflows.relaxation_scheme import Workflow_relaxation
 from mse.workflows.base import Baseworkflow
+from mse.utilities import print_nice
 
 import warnings
 
@@ -53,39 +54,46 @@ def set_workflow(c,
     atoms.calc = None
 
     if not dry_run:
-        wrkf = Workflow_relaxation(atoms=atoms,
-                                   working_directory=c,
-                                   dircheck=check)
+        try:
+            wrkf = Workflow_relaxation(atoms=atoms,
+                                       working_directory=c,
+                                       dircheck=check)
 
-        if symmetrize:
-            wrkf.refine_symmetry(symprec=0.001)
+            if symmetrize:
+                wrkf.refine_symmetry(symprec=0.001)
 
-        wrkf.initialize_job(name=c,
-                            modeinps=modeinps,
-                            calcinps=calcinps,
-                            relaxinps=relaxargs, )
-        if clean_dir:
-            wrkf.job.reset()
+            wrkf.initialize_job(name=c,
+                                modeinps=modeinps,
+                                calcinps=calcinps,
+                                relaxinps=relaxargs, )
+            if clean_dir:
+                wrkf.job.reset()
 
-        print(wrkf.job.relax_inputs)
+            print(wrkf.job.relax_inputs)
 
-        wrkf.make_ready(autofetch=True)
-        if not hpckwargs:
-            hpckwargs = dict()
-        server = hpckwargs.pop("server", "lcluster13")
-        walltime = hpckwargs.pop("walltime", "12:00:00")
-        save_calc = hpckwargs.pop("save_calc", False)
-        save_db = hpckwargs.pop("save_db", True)
-        remove = hpckwargs.pop("remove", False)
-        backup = hpckwargs.pop("backup", False)
-        envcmd = "'{}'".format(hpckwargs.pop("envcmd", 'conda activate'))
-        wrkf.hpc_setup(server=server,
-                       walltime=walltime,
-                       save_calc=save_calc,
-                       save_db=save_db,
-                       remove=remove,
-                       backup=backup,
-                       envcmd=envcmd, **hpckwargs)
+            wrkf.make_ready(autofetch=True)
+            if not hpckwargs:
+                hpckwargs = dict()
+            server = hpckwargs.pop("server", "lcluster13")
+            walltime = hpckwargs.pop("walltime", "12:00:00")
+            save_calc = hpckwargs.pop("save_calc", False)
+            save_db = hpckwargs.pop("save_db", True)
+            remove = hpckwargs.pop("remove", False)
+            backup = hpckwargs.pop("backup", False)
+            envcmd = "'{}'".format(hpckwargs.pop("envcmd", 'conda activate'))
+            wrkf.hpc_setup(server=server,
+                           walltime=walltime,
+                           save_calc=save_calc,
+                           save_db=save_db,
+                           remove=remove,
+                           backup=backup,
+                           envcmd=envcmd, **hpckwargs)
+        except Exception as error:
+            warnings.warn(f"Got exception:\n{error}")
+            try:
+                return wrkf
+            except NameError:
+                raise
         return wrkf
 
 
@@ -93,7 +101,7 @@ def set_workflow_relaxation(composition: str,
                             working_directory: str,
                             encut: int or float = None,
                             calculator_type: "gpaw" or "vasp" = "gpaw",
-                            run_type: "static" or "relax" = "static",
+                            run_type: "static" or "relax" = "relax",
                             row: row = None,
                             atoms: aseatoms = None,
                             dry_run: bool = True,
@@ -110,10 +118,17 @@ def set_workflow_relaxation(composition: str,
                             **extraargs):
 
         # assert atoms or row
+
         modeargs = dict() if not modeargs else modeargs
         calcargs = dict() if not calcargs else calcargs
         relaxargs = dict() if not relaxargs else relaxargs
         jobargs = dict() if not jobargs else jobargs
+
+        _argvalues = locals()
+        args = ["composition", "working_directory", "encut", "calculator_type", "run_type", "dry_run","dircheck",
+                "clean_dir", "symmetrize", "symprec", "verbosity", "jobargs" ]
+        _argdct = {k:_argvalues[k] for k in args}
+
 
         if row:
             if row.calculator == "gpaw":
@@ -128,8 +143,17 @@ def set_workflow_relaxation(composition: str,
 
         modeinps.update(modeargs)
         calcinps.update(calcargs)
+
         if verbosity >= 1:
-            print("calcinps:{}\nmodeinps:{}\nrelaxinps:{}\nhpcinps:{}".format(calcinps, modeinps, relaxargs, hpckwargs))
+            lsep = "\n\t"
+            print("calcinps:{0}{1}".format(lsep, print_nice(calcinps, separater=lsep)))
+            print("modeinps:{0}{1}".format(lsep, print_nice(modeinps, separater=lsep)))
+            print("relaxinps:{0}{1}".format(lsep, print_nice(relaxargs, separater=lsep)))
+            print("hpcinps:{0}{1}".format(lsep, print_nice(hpckwargs, separater=lsep)))
+            if extraargs:
+                print("Extra args:{0}{1}".format(lsep, print_nice(extraargs, separater=lsep)))
+
+            print("Other input paramters:{0}{1}".format(lsep, print_nice(_argdct, separater=lsep)))
 
         if not atoms and row:
             atoms = row.toatoms(False)
