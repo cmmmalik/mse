@@ -58,6 +58,7 @@ class Optimize:
             self.parameters[k] = kwargs.get(k, v)
         if kwargs.get("db", None):
             self.parameters["db"] = "optimization.db"
+        self.dedecut_calc = kwargs.get("dedecut_from_calc", False)
 
     @classmethod
     def allowed_args(cls):
@@ -114,6 +115,7 @@ class Optimize:
         return conv
 
     def get_dedecut(self):
+
         ncalc = getnewcalc(self.atoms.calc, txt="dedecut.txt")
         # Only for gpaw this will work
         encut = ncalc.todict()["mode"]["ecut"]
@@ -269,7 +271,6 @@ class Moptimize:
         for k,v in self.__dict__.items():
             if isinstance(v, ase.atoms.Atoms):
                 v=v.todict()
-
             dct[k] =v
 
         return dct
@@ -287,7 +288,7 @@ class Moptimize:
                   reltype=dct["_reltype"])
 
         for k,v in dct.items():
-            if  k in ["_atoms", "_reltype", "working_directory"]:
+            if k in ["_atoms", "_reltype", "working_directory"]:
                 continue
 
             setattr(obj, k, v)
