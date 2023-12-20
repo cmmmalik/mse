@@ -352,7 +352,7 @@ class HPCjob:
         if self.working_directory:
             st += "working_directory:{},".format(self.working_directory)
         if self.main_directory:
-            st += "main_directory:{}\n".format(self.main_directory)
+            st += "main_directory:{}".format(self.main_directory)
         if self.server:
             st += "server:{}".format(self.server)
 
