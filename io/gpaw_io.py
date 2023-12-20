@@ -3,6 +3,9 @@ import re
 
 from mse.parser.Parse import list_dict,  parse_type_json
 
+from copy import deepcopy
+import json
+
 
 class FormatException(Exception):
     pass
@@ -105,9 +108,11 @@ class Readparameters:
     def _getxc_info(self, txtfile):
         for nxtline in txtfile:
             if nxtline.strip().endswith("Correlation functional"):
-                s = re.search("(?<=\s)[A-Z]+(?=\sExchange)", nxtline)
+                # s = re.search("(?<=\s)[A-Z]+(?=\sExchange)", nxtline)
+                s = re.search("(?<=\s)\S*(?=\sExchange)", nxtline)
                 if not s:
                     warnings.warn("Couldn't find any match for 'Exchange-Correlation', (debug it)")
+                    break
                 self.parameters["xc"] = s.group()
                 break
 
@@ -255,3 +260,22 @@ def getkdenpy(filename, verbosity: int = 0):
                 break
 
     return output
+
+
+def parse_string_dict(dctstr: str):
+    dctstr = re.sub(r"(\')", r'"', dctstr)
+    return json.loads(dctstr)
+
+def kpden_gpaw_rows(row):
+    kpden = row.calculator_parameters.get("kpts", None)
+    if not kpden: # old_row data
+        kpden = parse_string_dict(deepcopy(row.kpden))
+        kden = row.kden
+        kpden["density"] = kden
+    else:
+        kpden = kpden.copy()
+    assert "density" in kpden
+    gamma = kpden.pop("gamma", None)
+    gamma = True if gamma in ["True", True] else None
+    print(kpden, gamma)
+    return kpden, gamma
