@@ -18,7 +18,7 @@ def get_kpoints_from_density(density: int or float,
     if even:
         n_size = (np.ceil(n_size/2.0)*2.0).astype(int)
     else:
-        n_size = np.ceil(n_size).astpye(int)
+        n_size = np.ceil(n_size).astype(int)
 
     return n_size
 
