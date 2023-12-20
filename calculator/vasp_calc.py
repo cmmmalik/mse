@@ -25,10 +25,11 @@ from HPCtools.hpc_tools3 import filterargs
 
 # TODO: ions, cell, full relaxation in a single job/job factory
 # TODO: create job factory that can do ions, cell, full relaxations
-# TODO: implement dictionary_to, dictionary_from method, for json support.(pickle may fail)
+
 
 class PickleReadError(Exception):
     pass
+
 
 class VASP(ASEjob):
 
@@ -45,7 +46,7 @@ class VASP(ASEjob):
                  calcinps: dict = None,
                  modeinps: dict = None,
                  run_type: "static" or "relax" = "static",
-                 ):
+                 restart:bool=False):
 
         super(VASP, self).__init__(name=name,
                                    working_directory=working_directory,
@@ -57,14 +58,16 @@ class VASP(ASEjob):
         self.run_type = run_type  # depending upon the run_type, fit in appropriate parameters
         self.calcname = "VASP"
         self.inputs = self._default_inputs()
+        self.restart = restart
+        if restart == True:
+            # empty the default outputs...
+            self.inputs = {}
 
-        if isinstance(calcinps, dict):
-            if calcinps is None:
-                calcinps = dict()
-            self.inputs.update(calcinps)
-        else:
-            raise TypeError("calcinps must be an instance of {}, instead received {}".format(dict,
-                                                                                         type(calcinps)))
+        if calcinps is None:
+            calcinps = dict()
+
+        self.inputs.update(calcinps)
+
         if isinstance(modeinps, dict):
             warnings.warn("The use of Mode inps is depracated")
             self.inputs.update(modeinps)
@@ -180,14 +183,33 @@ class VASP(ASEjob):
         return torun
 
     def initialize_calc(self, **kwargs):
+
+        if self.atoms and getattr(self.atoms,"calc"):
+            return
+
         self.inputs.update(kwargs)
-        self.set_kden()
+        self.set_kden() # check for kpts
+
         calc_inputs = deepcopy(self.inputs)
         calc_inputs.pop("kpden", None)
 
-        calc = asevaspcalc(atoms=self.atoms,
-                           **calc_inputs)
+        if not self.restart: # let vasp calculator handle the job reading...
+
+            calc = asevaspcalc(atoms=self.atoms,
+                               **calc_inputs)
+
+        else:
+            calc, atoms = self.readcalc(**calc_inputs)
+            self.atoms = atoms
+
         self.atoms.calc = calc
+
+    def readcalc(self, **calc_inputs):
+
+        calc = asevaspcalc(restart=True, **calc_inputs)
+        atoms = calc.get_atoms()
+        calc.reset()
+        return calc, atoms
 
     def initialize(self):
         if not os.path.exists(self.working_directory):
@@ -443,3 +465,68 @@ class VASP(ASEjob):
         if not dry_run:
             self.hpc.prepare(**prepargs)
             self.hpc.submit()
+
+    def todict(self):
+        dct = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, aseatoms):
+                v = v.todict()
+
+            elif k == "_scheme":
+                continue
+
+            elif hasattr(v, "todict"):
+                v = v.todict()
+
+            elif hasattr(v, "asdict"):
+                warnings.warn("asdict() method of {} if undepracated",DeprecationWarning)
+                v = v.asdict()
+
+            elif k == "_working_directory":
+                v = str(v)
+
+            else:
+                print("Can not write {} instance of {} as {}".format(k,v,dict))
+
+            dct[k] = v
+
+        return dct
+
+    def as_dict(self):
+        dct = {}
+        dct["@module"] = self.__class__.__module__
+        dct["@class"] = self.__class__.__name__
+        dct.update(self.todict())
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+        from monty.json import MontyDecoder
+        dct["inputs"] = MontyDecoder().process_decoded(dct["inputs"])
+
+        obj = cls(name=dct["_name"],
+                  working_directory=dct["_working_directory"],
+                  calcinps=dct["inputs"])
+
+        for k,v in dct.items():
+            if k in ["_name", "_working_directory"] or k.startswith("@"):
+                continue
+            elif k == "_atoms":
+                v = aseatoms.fromdict(MontyDecoder().process_decoded(v))
+            setattr(obj, k, v)
+
+        return obj
+
+    def tojson(self):
+
+        from monty.json import MontyEncoder
+        import json
+        return json.dumps(self, cls=MontyEncoder)
+
+    @classmethod
+    def fromjson(cls, jstring):
+        from monty.json import MontyDecoder
+        import json
+
+        dct = json.loads(jstring, cls=MontyDecoder)
+        return cls.from_dict(dct)
