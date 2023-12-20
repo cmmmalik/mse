@@ -7,6 +7,7 @@ from copy import deepcopy
 import warnings
 import sys
 
+
 def getnewcalc(calc: asecalculator, txt="-"):
     try:
         parameters = deepcopy(calc.parameters)
