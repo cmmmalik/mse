@@ -8,7 +8,6 @@ import subprocess
 import sys
 import warnings
 
-from mse.io.scripts import InterfaceGPAW as itfgpaw
 
 init(autoreset=True)
 
@@ -196,6 +195,7 @@ class SpDirectory(Directory):
     @staticmethod
     def write_gpawscript(folders, encut, outfile="run.py", poscarname="POSCAR", sep="."):
         # k-points density (kden) and encut, and poscarname="POCSAR"
+        from mse.io.scripts import InterfaceGPAW as itfgpaw
         writer_gpaw = itfgpaw(poscarname)
 
         for k in folders:
@@ -222,7 +222,13 @@ class CD:
         print("Jumped to directory {}".format(self.newpath))
 
     def exit(self):
-        os.chdir(self.oldpaths[0])
+        try:
+            os.chdir(self.oldpaths[0])
+        except IndexError as ex:
+            pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.exit()
 
     def stepback(self):
         self.directjump(index=-1)
