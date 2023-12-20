@@ -1,30 +1,14 @@
+import warnings
+
 from ase.atoms import Atoms as aseatoms
 from ase.io import read
-from ase.constraints import UnitCellFilter, StrainFilter
-from ase.optimize.bfgs import BFGS
-from ase.optimize import QuasiNewton
-from ase.optimize.fire import FIRE
-from ase.optimize.bfgslinesearch import BFGSLineSearch as BFGSLS
-from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
 from ase.parallel import parprint
 from functools import partial
 from os import path
-from gpaw import GPAW, PW, FermiDirac
+from gpaw import GPAW, PW
 
-from mse.calculator.ase import getnewcalc, setmodecalc
 
 parprint = partial(parprint, flush=True)
-
-available_algorithms = {"QuasiNewton": QuasiNewton,
-                            "BFGS": BFGS,
-                            "CG": CG,
-                            "ScBFGS": ScBFGS,
-                            "BFGSLS": BFGSLS,
-                            "FIRE":FIRE}
-
-
-def print_available_algorithms():
-    print(list(available_algorithms.keys()))
 
 
 def optimize(atoms,
@@ -46,41 +30,81 @@ def optimize(atoms,
     :param verbose: bool, default True
     :return: atoms object
     """
+    from ase.constraints import ExpCellFilter
+    from ase.optimize.bfgslinesearch import BFGSLineSearch as BFGSLS
+    from ase.constraints import UnitCellFilter, StrainFilter
+    from ase.optimize.bfgs import BFGS
+    from ase.optimize import QuasiNewton
+    from ase.optimize.fire import FIRE
+    from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
+    # from packaging import version
 
-    optimizer_algorithms = available_algorithms
-    # relaxation algorithms
+    optimizer_algorithms = {"QuasiNewton": QuasiNewton,
+                            "BFGS": BFGS,
+                            "CG": CG,
+                            "ScBFGS": ScBFGS,
+                            "BFGSLS": BFGSLS,
+                            "FIRE": FIRE}
 
-    if relaxalgorithm in optimizer_algorithms:
-        pass
+    if relaxalgorithm not in optimizer_algorithms:
+        import ase.optimize as ase_op
+        warnings.warn("The {0} is invalid or  not found. trying to import it ", RuntimeWarning)
+        _opt_ = getattr(ase_op, relaxalgorithm)
     else:
-        raise KeyError("The {0} is invalid or  not found."
-                       "The available algorithms are: {1}".format(relaxalgorithm, optimizer_algorithms.values()))
+        _opt_ = optimizer_algorithms[relaxalgorithm]
+
+
+    # relaxation algorithms
+    watchdb = opargs.pop("db", None)
+    constraint = opargs.pop("constraint", {})
 
     parprint("Relaxation type: {}\nMask : {}\nOther relaxation parameters {}".format(reltype, mask, opargs))
 
+    entity = None
+    logfile = None
+
     if reltype == 'full':
 
-        uf = UnitCellFilter(atoms, mask=mask)
-        relax = optimizer_algorithms[relaxalgorithm](uf, logfile=path.join(working_directory, "rel-all.log"), **opargs)
+        # uf = UnitCellFilter(atoms, mask=mask)
+        entity = ExpCellFilter(atoms, mask=mask, **constraint)
+        logfile = "rel-all.log"
         if verbose:
             parprint("Full relaxation")
 
     elif reltype == 'cell':
-        sf = StrainFilter(atoms, mask=mask)
-        relax = optimizer_algorithms[relaxalgorithm](sf, logfile=path.join(working_directory, "rel-cell.log"), **opargs)
+        entity = StrainFilter(atoms, mask=mask, **constraint)
+        logfile = "rel-cell.log"
+
         if verbose:
             parprint("Cell relaxation only")
 
     elif reltype == 'ions':  # ionic_relaxation
-        relax = optimizer_algorithms[relaxalgorithm](atoms, logfile=path.join(working_directory,"rel-ionic.log"), **opargs)
+        entity = atoms
+        logfile = 'rel-ionic.log'
         if verbose:
             parprint("Ions relaxation only")
 
     else:
         raise ValueError("'{}' type relaxation is invalid".format(reltype))
 
+    relax = _opt_(entity, logfile=path.join(working_directory, logfile), **opargs)
+
+    if watchdb:
+        assert isinstance(watchdb, str)
+        db = attachdb(watchdb)
+        if len(db) == 0:
+            #write the first step atoms....
+            db.write(atoms)
+
+        relax.attach(db.write, interval=1, atoms=atoms, reltype=reltype)
+
     converged = relax.run(fmax=fmax, steps=steps)
     return converged
+
+
+def attachdb(db):
+    from ase.db import connect
+    return connect(db)
 
 
 def get_modify_calculator(calc = None,
@@ -168,7 +192,6 @@ def get_modify_calculator(calc = None,
     calc.set(**parameters)
 
 
-
     # if parameters["U"] is not None:
     #     calc.set(setups=parameters["U"])
     #
@@ -190,8 +213,7 @@ def get_modify_calculator(calc = None,
     # if parameters["mixer"] is not None:
     #     attach_mixer(calc, parameters["mixer"])
     #     parprint("calling the mixer function:", flush=True)
-
-
+#
 def attach_mixer(calc, mixer):
 
     """To change default values of mixer parameters of calculator
@@ -311,6 +333,9 @@ def get_dedecut_v1(atoms: aseatoms ,
     :param verbose: silent or visible ,True, False
     :return: dedecut value for pulay correction
     """
+
+    from mse.calculator.ase import getnewcalc, setmodecalc
+
     defaultparameters = { "verbose": True,
                           "suffixf": "",
                           "prefixf":"dedecut"}
