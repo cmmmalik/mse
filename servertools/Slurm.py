@@ -35,6 +35,7 @@ def wrap_path(wraper="gpaw_wrap", host=None):
     path = path.strip()
     return path
 
+
 def get_timeout(directory="."):
     size = os.path.getsize(directory)
     size = size/1000 #kByte
