@@ -1,5 +1,4 @@
 import pickle
-import gpaw
 import argparse
 import warnings
 
@@ -12,8 +11,6 @@ import traceback
 import sys
 
 # from mse.calculator.gpaw_calc import Gpaw
-from mse.servertools.Slurm import putback_origin
-from HPCtools.hpc_tools3 import HPCMain
 
 parprint = partial(aseparprint, flush=True) # flush the buffers
 print = partial(print, flush=True)
@@ -80,6 +77,8 @@ def commandlineargs():
 
 def initialize_calc(job): #ToDo: this should be part of the job -----
 
+    import gpaw
+
     CALC = getattr(gpaw, job.calc)
     MODE = getattr(gpaw, job.mode)
     inputs = deepcopy(job.inputs)
@@ -135,6 +134,8 @@ def autosendback(remove:bool, backup:bool, envcmd:str, verbosity:int=0):
 
 # Host refers to non-local machine, present on the other end of ssh connection.
 # Do not raise any exception, let the job pass through to completion.
+    from mse.servertools.Slurm import putback_origin
+    from HPCtools.hpc_tools3 import HPCMain
 
     origin, target, jobid, jobname = read_jobinfo(HPCMain.jobinfo)
     hostname, hostdir = origin
