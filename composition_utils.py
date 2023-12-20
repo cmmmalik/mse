@@ -7,6 +7,7 @@ from pymatgen.core.periodic_table import Element
 from mse.utilities import replace_1_string
 import re
 
+
 class EnhancedComposition(Composition):
 
     @property
@@ -72,7 +73,7 @@ class EnhancedComposition(Composition):
 
         elif selection == "X":
 
-            return [i.symbol for i in self.keys() if i.symbol in ["C", "N"] or i.row == 2 and i.group > 12]
+            return [i.symbol for i in self.keys() if i.symbol in ["C", "N"] ]#or i.row == 2 and i.group > 12]
 
         elif selection == "T":
 
@@ -82,9 +83,9 @@ class EnhancedComposition(Composition):
 
             raise ValueError("Unknown selection keyword")
 
-    def get_mappings(self):
+    def get_mappings(self, ttype=("M", "A", "X")):
         """ returns dictionary containing mappings of M,A,X as keys to individual elements in the composition """
-        return {i: ' '.join(self.select_elements_type(selection=i)) for i in ["M", "A", "X"]}
+        return {i: ' '.join(self.select_elements_type(selection=i)) for i in ttype}
 
     @staticmethod
     def remove_brackets(st):
@@ -153,6 +154,49 @@ class MAXcomp:
         assert n + 1 == quan[mapp["M"]]
 
         return quan[mapp["X"]]
+
+
+class MXene(MAXcomp):
+
+    def __init__(self, formula):
+        try:
+            super(MXene, self).__init__(formula=formula)
+        except ValueError:
+            pass
+
+        if not self.check_mxene():
+            raise ValueError("Expected MXene composition: got a non-MXene composition: {}".format(self.comp.iupac_formula.replace(" ", "")))
+
+    def check_mxene(self):
+        mapp = self.comp.get_mappings(ttype=("M", "A", "X", "T"))
+        if mapp["A"]:
+            return False
+
+        for k in mapp.keys():
+            if k == "A":
+                continue
+            if not mapp[k] and k != "T":
+                return False
+        try:
+            self.get_n()
+
+        except AssertionError:
+            return False
+
+        return True
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return str(self.comp)
+
+    def __getattr__(self, item):
+        if hasattr(self.comp, item):
+            return getattr(self.comp, item)
+
+        else:
+            raise AttributeError(f"{self.__class__.__name__} object as no attribute {item}")
 
 
 class UnconvMAX(MAXcomp):
