@@ -1,4 +1,5 @@
 import warnings
+from copy import deepcopy
 
 from ase.atoms import Atoms as aseatoms
 from ase.io import read
@@ -53,7 +54,7 @@ def optimize(atoms,
     else:
         _opt_ = optimizer_algorithms[relaxalgorithm]
 
-
+    opargs = deepcopy(opargs) # to make sure, it does not permanently edit the **opargs outside the scope of the function
     # relaxation algorithms
     watchdb = opargs.pop("db", None)
     constraint = opargs.pop("constraint", {})
@@ -156,7 +157,7 @@ def get_modify_calculator(calc = None,
 
         if key in pwargs:
             pwparameters[key] = value
-            initializepw = True
+            resetpw = True
 
         else:
             parameters[key] = value
