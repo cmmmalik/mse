@@ -32,8 +32,11 @@ class Optimize:
     def __init__(self, atoms: ase.atoms,
                  reltype: str or None = "pos",
                  working_directory:str=".",
+                 extra_algorithmkwargs=None,
                  **kwargs):
 
+        if extra_algorithmkwargs is None:
+            extra_algorithmkwargs = {}
         self._atoms = atoms
         self.reltype = reltype
         self.parameters = dict(self.default_parameters)
@@ -59,6 +62,11 @@ class Optimize:
         if kwargs.get("db", None):
             self.parameters["db"] = "optimization.db"
         self.dedecut_calc = kwargs.get("dedecut_from_calc", False)
+        self.dedecut_stepsize = kwargs.get("dedecut_stepsize",  10)
+
+        if not extra_algorithmkwargs:
+            extra_algorithmkwargs = dict()
+        self._extra_algo_kwargs = extra_algorithmkwargs
 
     @classmethod
     def allowed_args(cls):
@@ -106,6 +114,7 @@ class Optimize:
 
         kwargs.update(self.parameters)
         kwargs.pop("algorithm", None)
+        kwargs.update(self._extra_algo_kwargs)
         # because the name is different in the function call. due to backward compatibility reasons
         conv = goptimize(self.atoms,
                          reltype=self.reltype,
@@ -119,7 +128,7 @@ class Optimize:
         ncalc = getnewcalc(self.atoms.calc, txt="dedecut.txt")
         # Only for gpaw this will work
         encut = ncalc.todict()["mode"]["ecut"]
-        dedecut = gget_dedecut(self.atoms.copy(), encut=encut, calc=ncalc)
+        dedecut = gget_dedecut(self.atoms.copy(), encut=encut, calc=ncalc, step=self.dedecut_stepsize)
         return dedecut
 
     def optimize(self):
@@ -147,11 +156,28 @@ class Optimize:
             if conv:
                 return conv
 
+    def _check_apply_dedecut(self):
+        calc_dedecut = getattr(self.atoms.calc.parameters["mode"], "dedecut")
+        if not calc_dedecut:
+            dedecut = self.get_dedecut()
+            self._updatemodecalc(dedecut=dedecut)
+
+        else:
+            if calc_dedecut == "estimate":
+                warnings.warn(
+                        "The calculator built-in method will be used for getting the dedecut(derivative of energy w.r.t encut)")
+
+            else:
+                warnings.warn(f"dedecut was provided as, {calc_dedecut}")
+
     def _optimize(self):
 
         if not self.steps: # ignore dedecut_update, do only once before calling the actual optimization function
-            dedecut = self.get_dedecut()
-            self._updatemodecalc(dedecut=dedecut)
+
+            self._check_apply_dedecut()
+                # dedecut = self.get_dedecut()
+                # self._updatemodecalc(dedecut=dedecut)
+
             conv = self.relax()
             return conv
 
@@ -166,9 +192,10 @@ class Optimize:
         for c, st in enumerate(generator):
 
             if self.update_dedecut or c == 0:
-                dedecut = self.get_dedecut()
-                self._updatemodecalc(dedecut=dedecut)
 
+                self._check_apply_dedecut()
+                # dedecut = self.get_dedecut()
+                # self._updatemodecalc(dedecut=dedecut)
             conv = self.relax(steps=st)
 
             if conv:
@@ -271,7 +298,19 @@ class Moptimize:
         for k,v in self.__dict__.items():
             if isinstance(v, ase.atoms.Atoms):
                 v=v.todict()
-            dct[k] =v
+                if "constraints" in v:
+                    const_lst = []
+                    for c in v["constraints"]:
+                        try:
+                            const_lst.append(c.todict())
+                        except AttributeError:
+                            new_dct = {"name": c.__class__.__module__, # that's whi ase knows which class to import
+                                        }
+                            new_dct.update(c.__dict__)
+                            const_lst.append(new_dct)
+
+                    v["constraints"] = const_lst
+            dct[k] = v
 
         return dct
 
