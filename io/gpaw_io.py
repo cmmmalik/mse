@@ -266,6 +266,7 @@ def parse_string_dict(dctstr: str):
     dctstr = re.sub(r"(\')", r'"', dctstr)
     return json.loads(dctstr)
 
+
 def kpden_gpaw_rows(row):
     kpden = row.calculator_parameters.get("kpts", None)
     if not kpden: # old_row data
