@@ -4,7 +4,7 @@ from ase.spacegroup.symmetrize import check_symmetry
 from collections import Iterable
 from pymatgen.io.ase import AseAtomsAdaptor
 
-from database_utilities import get_rows_db
+from mse.database_utilities import get_rows_db
 from preprocessing.atoms import Pycomp
 from mse.analysis.symmetry import get_symmetry_kp_gamma
 from mse.ext.materials_project import get_entries as matentries

@@ -1,5 +1,4 @@
 import ase.atoms
-from ase.spacegroup.symmetrize import FixSymmetry
 from itertools import cycle as itcycle
 from typing import Iterable
 import warnings
@@ -157,7 +156,7 @@ class Optimize:
                 return conv
 
     def _check_apply_dedecut(self):
-        calc_dedecut = getattr(self.atoms.calc.parameters["mode"], "dedecut")
+        calc_dedecut = getattr(self.atoms.calc.parameters["mode"], "dedecut", None)
         if not calc_dedecut:
             dedecut = self.get_dedecut()
             self._updatemodecalc(dedecut=dedecut)
@@ -304,7 +303,7 @@ class Moptimize:
                         try:
                             const_lst.append(c.todict())
                         except AttributeError:
-                            new_dct = {"name": c.__class__.__module__, # that's whi ase knows which class to import
+                            new_dct = {"name": c.__class__.__name__, # that's whi ase knows which class to import
                                         }
                             new_dct.update(c.__dict__)
                             const_lst.append(new_dct)
