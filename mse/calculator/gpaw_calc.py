@@ -309,11 +309,9 @@ class Gpaw(Gpawjob):
     def _savetodb(self, *args, **kwargs):
         # can not handle constraint that does not contain todict() method ...
         # Adjust this into kwargs instead .....
-        if self.atoms.constraints and isinstance(self.atoms.constraints[0], FixSymmetry):
-            # at the moment ase does not have allow FIxsymmetry constraint atoms, storage in ase database,
-            # we we are removing it.
-            warnings.warn("Removing all constraints (Fix symmetry) from the atoms object, before saving into the database")
-            self.atoms.set_constraint()
+        if self.atoms.constraints: #and isinstance(self.atoms.constraints[0], FixSymmetry):
+            from mse.io.db_constraints import remove_not_todict
+            remove_not_todict(self.atoms)
 
         with asedbconnect(self.asedbname) as mydb:
             mydb.write(self.atoms, *args, **kwargs)
@@ -421,9 +419,10 @@ class Gpaw(Gpawjob):
 
     def _smartwriteasedb(self, db: str or dbCore, row, data: dict = {}, keys: dict = {}):
 
-        if self.atoms.constraints and isinstance(self.atoms.constraints[0], FixSymmetry):
-            warnings.warn("Removing all constraints (Fix symmetry) from the atoms object, before saving into the database")
-            self.atoms.set_constraint()
+        if self.atoms.constraints:
+            from mse.io.db_constraints import remove_not_todict
+            remove_not_todict(self.atoms)
+
         try:
             db.write(row, data=data, **keys)
         except (AttributeError, IOError) as e:
