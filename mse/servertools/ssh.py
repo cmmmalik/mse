@@ -123,7 +123,7 @@ class SFTPHandler:
             warnings.simplefilter("error")
         dir = os.path.dirname(localpath)
         if not dir:
-            dir = "."
+            dir = ""
         if localpath in os.listdir(dir):
             warnings.warn("RemoteFile already exists on local", UserWarning)
 
