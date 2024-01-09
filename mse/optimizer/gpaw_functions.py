@@ -46,6 +46,7 @@ def optimize(atoms,
         filters = {"full":  ExpCellFilter,
                    "cell": StrainFilter}
 
+    assert all([i in filters  for i in ["full", "cell"]])
     optimizer_algorithms = {"QuasiNewton": QuasiNewton,
                             "BFGS": BFGS,
                             "CG": CG,
@@ -78,13 +79,13 @@ def optimize(atoms,
     if reltype == 'full':
 
         # uf = UnitCellFilter(atoms, mask=mask)
-        entity = ExpCellFilter(atoms, mask=mask, **constraint)
+        entity = filters["full"](atoms, mask=mask, **constraint)
         logfile = "rel-all.log"
         if verbose:
             parprint("Full relaxation")
 
     elif reltype == 'cell':
-        entity = StrainFilter(atoms, mask=mask, **constraint)
+        entity = filters["cell"](atoms, mask=mask, **constraint)
         logfile = "rel-cell.log"
 
         if verbose:
