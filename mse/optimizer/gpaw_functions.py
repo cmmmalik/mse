@@ -20,6 +20,7 @@ def optimize(atoms,
              mask=None,
              verbose=True,
              working_directory:str=".",
+             filters=None,
              **opargs):
     """
         wrapper function for relaxation
@@ -38,7 +39,12 @@ def optimize(atoms,
     from ase.optimize import QuasiNewton
     from ase.optimize.fire import FIRE
     from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
-    # from packaging import version
+    from packaging import version
+    from ase import __version__
+    #
+    if not filters:
+        filters = {"full":  ExpCellFilter,
+                   "cell": StrainFilter}
 
     optimizer_algorithms = {"QuasiNewton": QuasiNewton,
                             "BFGS": BFGS,
@@ -46,6 +52,11 @@ def optimize(atoms,
                             "ScBFGS": ScBFGS,
                             "BFGSLS": BFGSLS,
                             "FIRE": FIRE}
+
+    if version.parse("3.23.0b1") >= version.parse(__version__):
+            from ase.filters import FrechetCellFilter
+            # then we can use the newer version of the filter...
+            filters["full"] = FrechetCellFilter
 
     if relaxalgorithm not in optimizer_algorithms:
         import ase.optimize as ase_op
