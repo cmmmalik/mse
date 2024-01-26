@@ -10,6 +10,10 @@ import re
 
 class EnhancedComposition(Composition):
 
+    def __mul__(self, other):
+        obj = super(EnhancedComposition, self).__mul__(other)
+        return EnhancedComposition(obj)
+
     @property
     def iupac_formula(self):
         formula = super().iupac_formula
