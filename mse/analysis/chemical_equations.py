@@ -457,7 +457,7 @@ def equation_balancer_v2(reactants: list,
     if verbosity >= 2:
         print("Debug\nCoeffs:{}".format(coeffs))
     show = []
-    if verbosity >= 0:
+    if verbosity >= 1:
         for compos in [reactants, products]:
             sh = ["{}{}".format(coeffs[comp], comp.iupac_formula) for comp in compos]
             sh = " + ".join(sh)
