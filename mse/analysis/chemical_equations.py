@@ -298,7 +298,7 @@ def equation_balancer_v1(reactants: list,
     prod_sims_coeffs = OrderedDict([(org_p, coeffs[p]) for org_p, p in zip(org_products, products)])
     return (reac_coeffs, prod_coeffs), (reac_sims_coeffs, prod_sims_coeffs)
 
-
+# ToDo: change this function to class or multiple different functions.
 def equation_balancer_v2(reactants: list,
                          products: list,
                          verbosity: int = 1,
