@@ -1,18 +1,22 @@
+import warnings
 from collections import OrderedDict
-import numpy as np
-from scipy.linalg import solve, lstsq, LinAlgError, svdvals
 from itertools import combinations as itcomb
 
+import numpy as np
 from preprocessing.atoms import Composition as Pycomp
 from scipy.linalg import solve, lstsq, LinAlgError, LinAlgWarning
+
+# for scipy solvers..
 warnings.filterwarnings("error", category=LinAlgWarning)  # will raise the warning to error
 
 
 class LinearlydependentMatrix(Exception):
     pass
 
+
 class ZeroValueError(ValueError):
     pass
+
 
 def equation_balancer(reactants: list,
                       products: list,
@@ -134,11 +138,11 @@ def equation_balancer(reactants: list,
 
 
 def equation_balancer_v1(reactants: list,
-                      products: list,
-                      verbosity: int = 1,
-                      decimal_tolerance: int = 4,
-                      depence_check: bool = False,
-                      tol_zero: float = None ):
+                         products: list,
+                         verbosity: int = 1,
+                         decimal_tolerance: int = 4,
+                         depence_check: bool = False,
+                         tol_zero: float = None):
     '''Balances a given chemical equation,
     input parameters:
         reactants, products, verbosity(default=1)'''
@@ -168,7 +172,7 @@ def equation_balancer_v1(reactants: list,
     rhs_els.sort()
 
     if verbosity >= 2:
-        print("debug:\nreactant_els:{}\nproduct_els:{}".format(lhs_els,rhs_els))
+        print("debug:\nreactant_els:{}\nproduct_els:{}".format(lhs_els, rhs_els))
 
     if not np.all(lhs_els == rhs_els):
         raise ValueError("Reactants and products do not contain equal type of number of unique  elements")
@@ -214,7 +218,7 @@ def equation_balancer_v1(reactants: list,
             if depence_check:
                 if verbosity >= 2:
                     print("Debug:\ndiff:{}".format(diff))
-                if rank == rows or rank >= abs(rows-diff):
+                if rank == rows or rank >= abs(rows - diff):
                     pass
                 else:
                     raise LinearlydependentMatrix("Matrix is not linearly-independent:{}".format(a))
@@ -299,6 +303,7 @@ def equation_balancer_v1(reactants: list,
     reac_sims_coeffs = OrderedDict([(org_r, coeffs[r]) for org_r, r in zip(org_reactants, reactants)])
     prod_sims_coeffs = OrderedDict([(org_p, coeffs[p]) for org_p, p in zip(org_products, products)])
     return (reac_coeffs, prod_coeffs), (reac_sims_coeffs, prod_sims_coeffs)
+
 
 # ToDo: change this function to class or multiple different functions.
 def equation_balancer_v2(reactants: list,
@@ -482,7 +487,7 @@ def equation_balancer_v3(reactants: list,
                          depence_check: bool = False,
                          tol_zero: float = None,
                          scale=True,
-                         allowed_zeros:list=None):
+                         allowed_zeros: list = None):
     """Balances a given chemical equation. This should allow some reactant coeffs to be zero. in case of a reaction such
     that Ti2AlC + HF + H2O ---> products, where either the coeffs for HF or H2O can be zero. The
     previous(above implementation) does not support this. The default behaviour is to check for all species coefficients.
@@ -500,6 +505,7 @@ def equation_balancer_v3(reactants: list,
     :return:
 
     """
+
     def fill_inmatrix(matrix, compounds: list, elsindex: np.asarray):
         for col, reacs in enumerate(compounds):
             for els in reacs:
@@ -514,7 +520,7 @@ def equation_balancer_v3(reactants: list,
         return matrix
 
     if allowed_zeros is not None:
-        allowed_zeros = list(map(Pycomp, allowed_zeros)) # convert to pycomp composition.
+        allowed_zeros = list(map(Pycomp, allowed_zeros))  # convert to pycomp composition.
 
     org_reactants = reactants
     org_products = products
@@ -533,7 +539,7 @@ def equation_balancer_v3(reactants: list,
     if not np.all(lhs_els == rhs_els):
         raise ValueError("Reactants and products do not contain equal type of number of unique  elements")
 
-    n = 1 # coefficient of the first product of the reaction., we set it to 1.
+    n = 1  # coefficient of the first product of the reaction., we set it to 1.
     a = np.zeros((len(lhs_els), len(reactants)))
     b = np.zeros((len(rhs_els), len(products)))
     # fill_in
@@ -645,13 +651,13 @@ def equation_balancer_v3(reactants: list,
     # if (coeffs == 0).any(-1):
     #     raise RuntimeError("One of the coefficient is zero: {}".format(coeffs))
 
-    if  allowed_zeros is None:
+    if allowed_zeros is None:
         _check_zero_coeffs_any(coeffs)
         coeffs = __coeffsarray_toordereddctcoeffs(coeffs=coeffs, n=n, reactants=reactants, products=products)
 
     else:
         coeffs = __coeffsarray_toordereddctcoeffs(coeffs=coeffs, n=n, reactants=reactants, products=products)
-        _check_zero_coeffs_except(coeffs, allow=allowed_zeros) #dictionary is required.
+        _check_zero_coeffs_except(coeffs, allow=allowed_zeros)  # dictionary is required.
 
     # zz = zip(coeffs, reactants + products[1:])
     #
@@ -681,10 +687,11 @@ def equation_balancer_v3(reactants: list,
 
     # reac_sims_coeffs = OrderedDict([(org_r, coeffs[r]) for org_r, r in zip(org_reactants, reactants)])
     # prod_sims_coeffs = OrderedDict([(org_p, coeffs[p]) for org_p, p in zip(org_products, products)])
-    simreac= __get_tuple_orgspecies_coeffs(coeffs=coeffs,  reactzip=zip(org_reactants, reactants),
-                                           productzip=zip(org_products, products))
+    simreac = __get_tuple_orgspecies_coeffs(coeffs=coeffs, reactzip=zip(org_reactants, reactants),
+                                            productzip=zip(org_products, products))
 
     return pycompreacs, simreac
+
 
 def _scale_coeffs(coeffs, n):
     """
@@ -706,6 +713,7 @@ def _scale_coeffs(coeffs, n):
         n = n / factor
     return coeffs, n
 
+
 def _check_zero_coeffs_any(coeffs):
     """
     Checks for any zero coefficients and raises an error.
@@ -716,10 +724,11 @@ def _check_zero_coeffs_any(coeffs):
     if (coeffs == 0).any(-1):
         raise RuntimeError("One of the coefficient is zero: {}".format(coeffs))
 
-def _check_zero_coeffs_except(coeffs:dict, allow:list):
 
+def _check_zero_coeffs_except(coeffs: dict, allow: list):
     try:
-        if all([coeffs[k] == 0 for k in allow]): # check if both of the allowed coeffs are zero, atleast one should be non-zero.
+        if all([coeffs[k] == 0 for k in
+                allow]):  # check if both of the allowed coeffs are zero, atleast one should be non-zero.
             raise ZeroValueError(f"Both allowed species coefficients are zero")
     except KeyError:
         pass
@@ -727,7 +736,8 @@ def _check_zero_coeffs_except(coeffs:dict, allow:list):
     if any([coeffs[k] == 0 for k in coeffs if k not in allow]):
         raise ZeroValueError(f"One of the coefficients are zero: {coeffs}")
 
-def show_reaction(reactants, products,coeffs):
+
+def show_reaction(reactants, products, coeffs):
     show = []
     for compos in [reactants, products]:
         sh = ["{}{}".format(coeffs[comp], comp.iupac_formula) for comp in compos]
@@ -737,20 +747,21 @@ def show_reaction(reactants, products,coeffs):
     show = " ---> ".join(show)
     print(show)
 
-def _get_tuple_dctcoeffs(coeffs, reactants, products):
 
+def _get_tuple_dctcoeffs(coeffs, reactants, products):
     reac_coeffs = OrderedDict([(c, coeffs[c]) for c in reactants])
     prod_coeffs = OrderedDict([(c, coeffs[c]) for c in products])
     return reac_coeffs, prod_coeffs
 
-def __get_tuple_orgspecies_coeffs(coeffs,reactzip, productzip ):
 
+def __get_tuple_orgspecies_coeffs(coeffs, reactzip, productzip):
     reac_sims_coeffs = OrderedDict([(org_r, coeffs[r]) for org_r, r in reactzip])
-    prod_sims_coeffs = OrderedDict([(org_p, coeffs[p]) for org_p, p in productzip]) # first entry is considered orgiginal
+    prod_sims_coeffs = OrderedDict(
+        [(org_p, coeffs[p]) for org_p, p in productzip])  # first entry is considered orgiginal
     return reac_sims_coeffs, prod_sims_coeffs
 
 
-def __coeffsarray_toordereddctcoeffs(coeffs, n, reactants, products, verbosity:int=1):
+def __coeffsarray_toordereddctcoeffs(coeffs, n, reactants, products, verbosity: int = 1):
     """
     we are combining both reactants and products into a single dictionary.
     :param coeffs: coefficient array, without the first product entry.
@@ -766,8 +777,7 @@ def __coeffsarray_toordereddctcoeffs(coeffs, n, reactants, products, verbosity:i
         print("Debug:\n{}".format(coeffs))
 
     coeffsout = OrderedDict([(comp, c) for c, comp in zz])
-    assert len(coeffs) == len(coeffsout) # making sure that we don't have duplicates.
+    assert len(coeffs) == len(coeffsout)  # making sure that we don't have duplicates.
     coeffsout[products[0]] = n
 
     return coeffsout
-
