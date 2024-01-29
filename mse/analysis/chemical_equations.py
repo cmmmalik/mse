@@ -4,6 +4,8 @@ from scipy.linalg import solve, lstsq, LinAlgError, svdvals
 from itertools import combinations as itcomb
 
 from preprocessing.atoms import Composition as Pycomp
+from scipy.linalg import solve, lstsq, LinAlgError, LinAlgWarning
+warnings.filterwarnings("error", category=LinAlgWarning)  # will raise the warning to error
 
 
 class LinearlydependentMatrix(Exception):
