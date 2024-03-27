@@ -430,7 +430,8 @@ def equation_balancer_v2(reactants: list,
 
     except LinAlgError:  # non-singular Matrix
         coeffs = lstsq(a, b)[0]
-        print(coeffs)
+        if verbosity >= 2:
+            print(coeffs)
 
     #            try:
     #                coeffs,_,_,_ = lstsq(a,b)
