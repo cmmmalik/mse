@@ -65,6 +65,14 @@ class Directory:
 
         return False
 
+    @classmethod
+    def check_empty(cls, directory):
+        contents = os.listdir(directory)
+        st = True
+        if len(contents) != 0:
+            st = False
+        return st
+
     @staticmethod
     def delete(directory):
         try:
