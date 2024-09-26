@@ -4,7 +4,7 @@ from ase.io import read as aseread
 from ase.io.trajectory import Trajectory
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.spacegroup.symmetrize import FixSymmetry
+#from ase.spacegroup.symmetrize import FixSymmetry
 
 import pickle
 from gpaw import GPAW as gpawGPAW
