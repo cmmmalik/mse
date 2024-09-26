@@ -134,6 +134,10 @@ class MAXcomp:
         return self.comp.reduced_composition
 
     @property
+    def reduced_composition(self):
+        return self.comp.reduced_composition
+
+    @property
     def comp(self):
         return self._comp
 
