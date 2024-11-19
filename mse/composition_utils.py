@@ -30,7 +30,7 @@ class EnhancedComposition(Composition):
     def get_withoutel_iupac_formula(self, el):
 
         formula = self.iupac_formula
-        formula = re.sub(el + "\d*\.?\d*", "", formula)
+        formula = re.sub(el + r"\d*\.?\d*", "", formula)
         return formula
 
     def get_Ael(self):
