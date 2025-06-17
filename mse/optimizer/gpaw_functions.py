@@ -6,7 +6,6 @@ from ase.io import read
 from ase.parallel import parprint
 from functools import partial
 from os import path
-from gpaw import GPAW, PW
 
 
 parprint = partial(parprint, flush=True)
