@@ -31,9 +31,9 @@ def optimize(atoms,
     :param verbose: bool, default True
     :return: atoms object
     """
-    from ase.constraints import ExpCellFilter
+    # from ase.constraints import ExpCellFilter
     from ase.optimize.bfgslinesearch import BFGSLineSearch as BFGSLS
-    from ase.constraints import UnitCellFilter, StrainFilter
+    # from ase.constraints import UnitCellFilter, StrainFilter
     from ase.optimize.bfgs import BFGS
     from ase.optimize import QuasiNewton
     from ase.optimize.fire import FIRE
@@ -42,6 +42,8 @@ def optimize(atoms,
     from ase import __version__
     #
     if not filters:
+        from ase.filters import ExpCellFilter, StrainFilter
+
         filters = {"full":  ExpCellFilter,
                    "cell": StrainFilter}
 
