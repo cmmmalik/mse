@@ -301,7 +301,7 @@ class Moptimize:
                     const_lst = []
                     for c in v["constraints"]:
                         try:
-                            const_lst.append(c.todict())
+                            new_dct=c.todict()
                         except AttributeError:
                             new_dct = {"name": c.__class__.__name__, # that's whi ase knows which class to import
                                         }
