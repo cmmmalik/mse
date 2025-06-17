@@ -11,6 +11,7 @@ import sys
 def getnewcalc(calc: asecalculator, txt="-"):
     try:
         parameters = deepcopy(calc.parameters)
+        parallel = deepcopy(calc.parallel)
     except Exception as e:
         parprint("Run into an Error:{}".format(e), flush=True)
         parprint("Calc parameters:\n{}".format(calc.parameters), flush=True)
@@ -19,7 +20,7 @@ def getnewcalc(calc: asecalculator, txt="-"):
     calcmodule = import_module(calc.__module__)
     Calc = getattr(calcmodule, calc.__class__.__name__)
     parameters.pop("txt", None)
-    return Calc(txt=txt, **parameters)
+    return Calc(txt=txt, **parameters, parallel=parallel)
 
 
 def setmodecalc(calc: asecalculator, dedecut: str or float or int = None, **kwargs):

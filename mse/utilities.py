@@ -37,6 +37,10 @@ def replace_1_string(s):
 
     return strwithoutone
 
+def replace_1_string_re(s):
+    import re
+    return  re.sub(r'(?<=[A-Za-z])1(?![\d.])', '', s)
+
 
 def print_nice(dct: dict, separater="\n", keysep=":", format_spaces=[11,7], nestsep="_"):
     """ returns formatted string representation of nested dictionary, tuples, lists, for printing nicely

@@ -214,7 +214,7 @@ def main():
     # write_outputs
     # save db
 
-    if savedb:
+    if savedb and job.converged: # only save the out.db if the job is converged..
         savetodb(job=job)
 
     scf = job.atoms.calc.scf

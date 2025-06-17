@@ -12,7 +12,7 @@ import os
 
 class ShellHandler:
 
-    def __init__(self, host=None, user=None, port=22):
+    def __init__(self, host=None, user=None, port=22, **kwargs):
 
         config = paramiko.config.SSHConfig.from_file(open(os.path.expanduser("~/.ssh/config")))
         hostdata = config.lookup(host)
@@ -21,9 +21,12 @@ class ShellHandler:
             assert host and user
             hostdata = {"hostname": host, "username": user, "port": port}
 
+        # remove not usable keys from the dict...
+        [hostdata.pop(k) for k in ["serveraliveinterval", "serveralivecountmax"]]
+
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+        hostdata.update(kwargs)
         self.ssh.connect(**hostdata)
 
         self.ssh.__hostname__ = hostdata["hostname"]
@@ -149,6 +152,13 @@ class SFTPHandler:
                 self.get_dirs(source+"/"+item, os.path.join(target, item))
             else: # we have file simply copy it
                 self.get_file(source+"/"+item, os.path.join(target, item))
+
+    def remove_dir(self, path):
+        self.sftp.rmdir(path)
+
+    def remove_dirss(self, paths):
+        for path in paths:
+            self.remove_dir(path=path)
 
     def put_file(self, localpath, remotepath, safe=False):
 

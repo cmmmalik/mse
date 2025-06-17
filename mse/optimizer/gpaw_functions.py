@@ -6,7 +6,6 @@ from ase.io import read
 from ase.parallel import parprint
 from functools import partial
 from os import path
-from gpaw import GPAW, PW
 
 
 parprint = partial(parprint, flush=True)
@@ -20,6 +19,7 @@ def optimize(atoms,
              mask=None,
              verbose=True,
              working_directory:str=".",
+             filters=None,
              **opargs):
     """
         wrapper function for relaxation
@@ -31,21 +31,35 @@ def optimize(atoms,
     :param verbose: bool, default True
     :return: atoms object
     """
-    from ase.constraints import ExpCellFilter
+    # from ase.constraints import ExpCellFilter
     from ase.optimize.bfgslinesearch import BFGSLineSearch as BFGSLS
-    from ase.constraints import UnitCellFilter, StrainFilter
+    # from ase.constraints import UnitCellFilter, StrainFilter
     from ase.optimize.bfgs import BFGS
     from ase.optimize import QuasiNewton
     from ase.optimize.fire import FIRE
     from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
-    # from packaging import version
+    from packaging import version
+    from ase import __version__
+    #
+    if not filters:
+        from ase.filters import ExpCellFilter, StrainFilter
 
+        filters = {"full":  ExpCellFilter,
+                   "cell": StrainFilter}
+
+    assert all([i in filters  for i in ["full", "cell"]])
     optimizer_algorithms = {"QuasiNewton": QuasiNewton,
                             "BFGS": BFGS,
                             "CG": CG,
                             "ScBFGS": ScBFGS,
                             "BFGSLS": BFGSLS,
                             "FIRE": FIRE}
+
+    if version.parse("3.23.0b1") >= version.parse(__version__):
+            from ase.filters import FrechetCellFilter
+            # then we can use the newer version of the filter...
+            print(f"Sucessfully imported {FrechetCellFilter.__name__}")
+            filters["full"] = FrechetCellFilter
 
     if relaxalgorithm not in optimizer_algorithms:
         import ase.optimize as ase_op
@@ -67,13 +81,13 @@ def optimize(atoms,
     if reltype == 'full':
 
         # uf = UnitCellFilter(atoms, mask=mask)
-        entity = ExpCellFilter(atoms, mask=mask, **constraint)
+        entity = filters["full"](atoms, mask=mask, **constraint)
         logfile = "rel-all.log"
         if verbose:
             parprint("Full relaxation")
 
     elif reltype == 'cell':
-        entity = StrainFilter(atoms, mask=mask, **constraint)
+        entity = filters["cell"](atoms, mask=mask, **constraint)
         logfile = "rel-cell.log"
 
         if verbose:
@@ -133,6 +147,8 @@ def get_modify_calculator(calc = None,
     :param output: output file name (".txt")
     :return: calculator object
     """
+    from gpaw import GPAW, PW
+
 
     par_args = ( "xc",
                    "swidth",

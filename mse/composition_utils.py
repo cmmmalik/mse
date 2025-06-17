@@ -9,6 +9,12 @@ import re
 
 
 class EnhancedComposition(Composition):
+    
+   
+
+    def __mul__(self, other):
+        obj = super(EnhancedComposition, self).__mul__(other)
+        return EnhancedComposition(obj)
 
     @property
     def iupac_formula(self):
@@ -26,7 +32,7 @@ class EnhancedComposition(Composition):
     def get_withoutel_iupac_formula(self, el):
 
         formula = self.iupac_formula
-        formula = re.sub(el + "\d*\.?\d*", "", formula)
+        formula = re.sub(el + r"\d*\.?\d*", "", formula)
         return formula
 
     def get_Ael(self):
@@ -127,6 +133,10 @@ class MAXcomp:
 
     @property
     def reduced_comp(self):
+        return self.comp.reduced_composition
+
+    @property
+    def reduced_composition(self):
         return self.comp.reduced_composition
 
     @property

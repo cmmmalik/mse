@@ -109,7 +109,7 @@ class Readparameters:
         for nxtline in txtfile:
             if nxtline.strip().endswith("Correlation functional"):
                 # s = re.search("(?<=\s)[A-Z]+(?=\sExchange)", nxtline)
-                s = re.search("(?<=\s)\S*(?=\sExchange)", nxtline)
+                s = re.search(r"(?<=\s)\S*(?=\sExchange)", nxtline)
                 if not s:
                     warnings.warn("Couldn't find any match for 'Exchange-Correlation', (debug it)")
                     break
@@ -218,7 +218,7 @@ class Readparameters:
             warnings.warn("attribute {} does not have 'k-points'".format('self.parameters'))
             return
         out = {}
-        kpts = re.findall("\d+ x \d+ x \d+", kpars)[0]
+        kpts = re.findall(r"\d+ x \d+ x \d+", kpars)[0]
         kpars = kpars.replace(kpts, "")
         kpts = list(kpts.split("x"))
         out["k-points"] = kpts

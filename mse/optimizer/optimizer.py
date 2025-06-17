@@ -301,12 +301,14 @@ class Moptimize:
                     const_lst = []
                     for c in v["constraints"]:
                         try:
-                            const_lst.append(c.todict())
+                            new_dct=c.todict()
                         except AttributeError:
                             new_dct = {"name": c.__class__.__name__, # that's whi ase knows which class to import
                                         }
                             new_dct.update(c.__dict__)
-                            const_lst.append(new_dct)
+                        if new_dct["name"] == "FixSymmetry": # at the moment  atoms are also inserted in the dictionary..
+                            new_dct["kwargs"].pop("atoms")
+                        const_lst.append(new_dct)
 
                     v["constraints"] = const_lst
             dct[k] = v

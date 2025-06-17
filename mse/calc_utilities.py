@@ -1,3 +1,5 @@
+import os
+
 from ase.cell import Cell as asecell
 import numpy as np
 
@@ -67,3 +69,21 @@ def get_size_ak(n_ak:int or float,
             size = np.ceil(size).astype(int)
     # size = np.ceil([n_ak, n_bk, n_zk])
     return size
+
+def read_calcparamsjson(calcfile="calc.json"):
+    from ase.parallel import paropen
+    from monty.json import MontyDecoder
+    import json
+
+    with paropen(calcfile, "r") as ff:
+        calc_params = json.load(ff, cls=MontyDecoder)
+
+    return calc_params
+
+def write_calc_json(path,calc_params):
+    from monty.json import MontyEncoder
+    import json
+
+    fle = os.path.join(path, "calc.json")
+    with open(fle, "w") as ff:
+        json.dump(calc_params, ff, cls=MontyEncoder)

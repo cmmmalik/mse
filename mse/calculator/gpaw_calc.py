@@ -4,7 +4,7 @@ from ase.io import read as aseread
 from ase.io.trajectory import Trajectory
 from ase.atoms import Atoms
 from ase.parallel import paropen
-from ase.spacegroup.symmetrize import FixSymmetry
+#from ase.spacegroup.symmetrize import FixSymmetry
 
 import pickle
 from gpaw import GPAW as gpawGPAW
@@ -504,6 +504,11 @@ class Gpaw(Gpawjob):
             init_poscar = self.inputs["calc_args"]["txt"]
         try:
             init_atoms = aseread(init_poscar, index=0)
+            # handle the constraints here as well
+            from mse.io.db_constraints import remove_not_todict
+            remove_not_todict(init_atoms)
+            init_atoms.constraints = [i.todict() for i in init_atoms.constraints]
+
         except OSError:
             init_atoms = None
 
