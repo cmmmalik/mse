@@ -11,3 +11,4 @@
 !/mse/.idea/vcs.xml
 
 !/mse/.idea/workspace.xml
+*.pyc
