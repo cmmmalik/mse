@@ -147,6 +147,8 @@ def get_modify_calculator(calc = None,
     :param output: output file name (".txt")
     :return: calculator object
     """
+    from gpaw import GPAW, PW
+
 
     par_args = ( "xc",
                    "swidth",
