@@ -153,6 +153,13 @@ class SFTPHandler:
             else: # we have file simply copy it
                 self.get_file(source+"/"+item, os.path.join(target, item))
 
+    def remove_dir(self, path):
+        self.sftp.rmdir(path)
+
+    def remove_dirss(self, paths):
+        for path in paths:
+            self.remove_dir(path=path)
+
     def put_file(self, localpath, remotepath, safe=False):
 
         if safe:
