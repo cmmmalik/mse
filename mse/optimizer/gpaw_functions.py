@@ -58,6 +58,7 @@ def optimize(atoms,
     if version.parse("3.23.0b1") >= version.parse(__version__):
             from ase.filters import FrechetCellFilter
             # then we can use the newer version of the filter...
+            print(f"Sucessfully imported {FrechetCellFilter.__name__}")
             filters["full"] = FrechetCellFilter
 
     if relaxalgorithm not in optimizer_algorithms:
