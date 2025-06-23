@@ -3,7 +3,8 @@ from collections import OrderedDict
 from itertools import combinations as itcomb
 
 import numpy as np
-from preprocessing.atoms import Composition as Pycomp
+# from preprocessing.atoms import Composition as Pycomp
+from mse.composition_utils import EnhancedComposition as Pycomp
 from scipy.linalg import solve, lstsq, LinAlgError, LinAlgWarning
 
 # for scipy solvers..
