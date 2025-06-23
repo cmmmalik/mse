@@ -1,6 +1,6 @@
 from collections import UserDict, abc, OrderedDict
 from pymatgen.core.composition import Composition
-from preprocessing.util import remove_1, float_int
+# from preprocessing.util import remove_1, float_int
 from pymatgen.analysis.reaction_calculator import Reaction
 import re
 import numpy as np
@@ -8,9 +8,9 @@ from ase.formula import Formula
 from chempy import balance_stoichiometry
 from colorama import Fore, Back, init, Style
 
-from energy_calculations import create_uHF, create_uHCl
-from data_functions import DFT_energies_001, DFT_energies
-import sympy
+# from energy_calculations import create_uHF, create_uHCl
+# from data_functions import DFT_energies_001, DFT_energies
+# import sympy
 
 #from warnings import warn
 import warnings
@@ -101,6 +101,8 @@ class Formation_enthalpy:
 	def mxene_reaction_stable(self, mxen_at, el_adsorb="F", verbose=True):
 		"""More stable method than the new one!"""
 
+		from energy_calculations import create_uHF, create_uHCl
+
 		sys_comps = self.get_selection_compounds()
 
 
@@ -177,6 +179,11 @@ class Formation_enthalpy:
 
 
 		Returns uHF array, deltaG array, upper and lower limits of uHF"""
+
+		from energy_calculations import create_uHF, create_uHCl
+		from preprocessing.util import remove_1, float_int
+
+
 
 		noF = orthomxen_at.formula_composition[el_adsorb] # no of adsorb atoms
 
@@ -425,6 +432,8 @@ class Formation_enthalpy:
 
 		warnings.warn('{} is still in testing phase\n. internally uses chempy package\n Cross check it please'.format(self.get_DeltaG_universal.__name__))
 
+		from energy_calculations import create_uHF, create_uHCl
+
 		energies = self._releva_energies({i for i in reactants if i != u_xcomp}, set(products))
 		energies.update(specificeng)
 		coeff_reac, coeff_pro = balance_stoichiometry(reactants, products) #Equation balancer
@@ -624,11 +633,14 @@ class Refenergies_dict(UserDict):
 			raise AttributeError("{0} does not have the attribute {1}".format(self, key) )
 
 	def _extend_(self, criteria):
+
+		from data_functions import DFT_energies_001, DFT_energies
+
 		
-		if criteria is "notstrict":
+		if criteria == "notstrict":
 			ecomp, eEl = DFT_energies()
 
-		elif criteria is "strict":
+		elif criteria == "strict":
 			ecomp, eEl = DFT_energies_001()
 
 		else:
@@ -681,6 +693,9 @@ class side_reactions:
 		b:
 
 			Ti2AlC + 3HF ---> TiC + Ti + AlF3 + 3H"""
+	
+		from energy_calculations import create_uHF, create_uHCl
+
 
 		max_formula = self.max_at.formula_composition.refined_iupac_formula
 		print(max_formula)
@@ -854,7 +869,7 @@ class Formation_maxphases(Formation_enthalpy):
 			max_f = maxat.formula_composition.iupac_formula
 			max_Ael = maxat.get_Ael() # Need to change it for solid solutions
 			
-			if re.sub(max_Ael + "\d?\.?\d?", "", max_f) != mx_at.formula_composition.get_withoutel_iupac_formula(el_adsorb):
+			if re.sub(max_Ael + r"\d?\.?\d?", "", max_f) != mx_at.formula_composition.get_withoutel_iupac_formula(el_adsorb):
 
 				raise ValueError(" max phase '{}' is not the parent phase of the mxene '{}'. Probably the sequence of max and mxene lists/tuples are incompatible".format(maxat, mxen_ats[i]) )
 
@@ -867,6 +882,8 @@ class Formation_maxphases(Formation_enthalpy):
 				
 
 	def selectmax_fromidentitystring(self, string):
+
+		from preprocessing.util import remove_1
 
 		
 		max_fs= [i.formula_composition.iupac_formula for i in self.max_ats]
