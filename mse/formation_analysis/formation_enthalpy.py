@@ -633,6 +633,9 @@ class Refenergies_dict(UserDict):
 			raise AttributeError("{0} does not have the attribute {1}".format(self, key) )
 
 	def _extend_(self, criteria):
+
+		from data_functions import DFT_energies_001, DFT_energies
+
 		
 		if criteria is "notstrict":
 			ecomp, eEl = DFT_energies()
