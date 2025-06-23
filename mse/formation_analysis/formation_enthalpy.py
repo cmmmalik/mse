@@ -637,10 +637,10 @@ class Refenergies_dict(UserDict):
 		from data_functions import DFT_energies_001, DFT_energies
 
 		
-		if criteria is "notstrict":
+		if criteria == "notstrict":
 			ecomp, eEl = DFT_energies()
 
-		elif criteria is "strict":
+		elif criteria == "strict":
 			ecomp, eEl = DFT_energies_001()
 
 		else:
