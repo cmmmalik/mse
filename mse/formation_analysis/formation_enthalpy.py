@@ -693,6 +693,9 @@ class side_reactions:
 		b:
 
 			Ti2AlC + 3HF ---> TiC + Ti + AlF3 + 3H"""
+	
+		from energy_calculations import create_uHF, create_uHCl
+
 
 		max_formula = self.max_at.formula_composition.refined_iupac_formula
 		print(max_formula)
