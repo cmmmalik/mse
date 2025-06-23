@@ -1,6 +1,6 @@
 from collections import UserDict, abc, OrderedDict
 from pymatgen.core.composition import Composition
-from preprocessing.util import remove_1, float_int
+# from preprocessing.util import remove_1, float_int
 from pymatgen.analysis.reaction_calculator import Reaction
 import re
 import numpy as np
@@ -8,9 +8,9 @@ from ase.formula import Formula
 from chempy import balance_stoichiometry
 from colorama import Fore, Back, init, Style
 
-from energy_calculations import create_uHF, create_uHCl
-from data_functions import DFT_energies_001, DFT_energies
-import sympy
+# from energy_calculations import create_uHF, create_uHCl
+# from data_functions import DFT_energies_001, DFT_energies
+# import sympy
 
 #from warnings import warn
 import warnings
