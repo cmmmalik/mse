@@ -883,6 +883,8 @@ class Formation_maxphases(Formation_enthalpy):
 
 	def selectmax_fromidentitystring(self, string):
 
+		from preprocessing.util import remove_1
+
 		
 		max_fs= [i.formula_composition.iupac_formula for i in self.max_ats]
 		max_fs = [remove_1(i) for i in max_fs]
