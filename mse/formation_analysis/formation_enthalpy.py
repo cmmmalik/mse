@@ -101,6 +101,8 @@ class Formation_enthalpy:
 	def mxene_reaction_stable(self, mxen_at, el_adsorb="F", verbose=True):
 		"""More stable method than the new one!"""
 
+		from energy_calculations import create_uHF, create_uHCl
+
 		sys_comps = self.get_selection_compounds()
 
 
@@ -177,6 +179,11 @@ class Formation_enthalpy:
 
 
 		Returns uHF array, deltaG array, upper and lower limits of uHF"""
+
+		from energy_calculations import create_uHF, create_uHCl
+		from preprocessing.util import remove_1, float_int
+
+
 
 		noF = orthomxen_at.formula_composition[el_adsorb] # no of adsorb atoms
 
@@ -424,6 +431,8 @@ class Formation_enthalpy:
 		anion: element (F, Cl). The anion introducted by the etchant(u_xcomp) in the solution, also reacts with various metallic ions to form respective compound i.e AF3, MF3,"""
 
 		warnings.warn('{} is still in testing phase\n. internally uses chempy package\n Cross check it please'.format(self.get_DeltaG_universal.__name__))
+
+		from energy_calculations import create_uHF, create_uHCl
 
 		energies = self._releva_energies({i for i in reactants if i != u_xcomp}, set(products))
 		energies.update(specificeng)
