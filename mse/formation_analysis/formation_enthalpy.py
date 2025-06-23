@@ -869,7 +869,7 @@ class Formation_maxphases(Formation_enthalpy):
 			max_f = maxat.formula_composition.iupac_formula
 			max_Ael = maxat.get_Ael() # Need to change it for solid solutions
 			
-			if re.sub(max_Ael + "\d?\.?\d?", "", max_f) != mx_at.formula_composition.get_withoutel_iupac_formula(el_adsorb):
+			if re.sub(max_Ael + r"\d?\.?\d?", "", max_f) != mx_at.formula_composition.get_withoutel_iupac_formula(el_adsorb):
 
 				raise ValueError(" max phase '{}' is not the parent phase of the mxene '{}'. Probably the sequence of max and mxene lists/tuples are incompatible".format(maxat, mxen_ats[i]) )
 
