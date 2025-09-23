@@ -164,6 +164,19 @@ class MAXcomp:
         assert n + 1 == quan[mapp["M"]]
 
         return quan[mapp["X"]]
+    
+class DoubleMAXcomp(MAXcomp):
+    
+    def get_n(self):
+        prim_comp = self.reduced_comp
+        mapp = self.maxelements
+        # quan = prim_comp.get_el_amt_dict()
+        m1, m2 = mapp["M"].split()
+        quan = prim_comp.get_el_amt_dict()
+        n = quan[mapp["X"]]
+        assert isclose(n + 1, quan[m1] + quan[m2])
+        
+        return n
 
 
 class MXene(MAXcomp):
