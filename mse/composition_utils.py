@@ -107,6 +107,7 @@ class EnhancedComposition(Composition):
         b = st.find("(")
         e = st.find(")")
         return st[b + 1, e]
+    
 
 
 class MAXcomp:
