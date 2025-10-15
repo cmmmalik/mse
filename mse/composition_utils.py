@@ -197,11 +197,10 @@ class MXene(MAXcomp):
         if mapp["A"]:
             return False
 
-        for k in mapp.keys():
-            if k == "A":
-                continue
-            if not mapp[k] and k != "T":
+        for k in ["M", "X"]:
+            if not mapp[k]:
                 return False
+        
         try:
             self.get_n()
 
@@ -222,6 +221,25 @@ class MXene(MAXcomp):
 
         else:
             raise AttributeError(f"{self.__class__.__name__} object as no attribute {item}")
+        
+
+class DoubleMXene(MXene,DoubleMAXcomp):
+    
+    def check_mxene(self):
+        
+        try:
+            MXene.check_mxene(self)
+        except AssertionError:
+            pass
+        
+        try:
+            DoubleMAXcomp.get_n(self)
+        except AssertionError:
+            return False
+        
+        return True
+            
+            
 
 
 class UnconvMAX(MAXcomp):
