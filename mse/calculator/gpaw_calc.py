@@ -252,10 +252,10 @@ class Gpaw(Gpawjob):
                   ".txt file will be read ")
             row = None
             try:
-                atoms = aseread(job["calc_args"]["output"])  # reading only the last configuration
-                print("Atoms read from .txt file")
+                atoms = aseread(job.inputs["calc_args"]["txt"])  # reading only the last configuration
+                print("Atoms read from {} file".format(job.inputs["calc_args"]["txt"]))
             except IOError:
-                print("Invalid/empty file: '{}'".format(job["calc_args"]["output"]))
+                print("Invalid/empty file: '{}'".format(job.inputs["calc_args"]["txt"]))
                 pass
 
         #read trajectory_file
