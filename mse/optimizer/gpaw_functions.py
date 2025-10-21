@@ -6,6 +6,8 @@ from ase.io import read
 from ase.parallel import parprint
 from functools import partial
 from os import path
+from packaging import version
+
 
 
 parprint = partial(parprint, flush=True)
@@ -38,7 +40,6 @@ def optimize(atoms,
     from ase.optimize import QuasiNewton
     from ase.optimize.fire import FIRE
     from ase.optimize.sciopt import SciPyFminCG as CG, SciPyFminBFGS as ScBFGS
-    from packaging import version
     from ase import __version__
     #
     if not filters:
