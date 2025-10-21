@@ -274,9 +274,19 @@ def get_dedecut(atoms,
     :param verbose: silent or visible ,True, False
     :return: dedecut value for pulay correction
     """
+
+    from gpaw import __version__
+    
+    if version.parse("25.7.0") >= version.parse(__version__):
+        new_gpaw = True
+    else:
+        new_gpaw = False
+
     defaultparameters = { "verbose": True,
                           "suffixf": "",
                           "step": 10}
+
+    orgmode = calc.parameters["mode"]
 
     for key, value in kwargs.items():
         if key in defaultparameters:
@@ -291,9 +301,17 @@ def get_dedecut(atoms,
     for icut in [encut-step, encut+step]:
         ats = atoms.copy()
         parprint("Encut in loop is %s" % icut, flush=True)
-        get_modify_calculator(encut=icut,
-                              calc=calc,
-                              txt="dedecut.txt".format(icut, defaultparameters["suffixf"]))
+        if not new_gpaw:
+            get_modify_calculator(encut=icut,
+                                    calc=calc,
+                                    txt="dedecut.txt")#.format(icut, defaultparameters["suffixf"]))
+        
+        else:
+            pw = orgmode.todict()
+            pw.update({"ecut": icut})
+            assert "pw" in pw["name"].lower()
+            calc = calc.new(mode=pw, txt="dedecut.txt")
+
 
         ats.set_calculator(calc)
         e.append(ats.get_potential_energy())
