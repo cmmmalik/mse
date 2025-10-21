@@ -6,6 +6,9 @@ from importlib import import_module
 from copy import deepcopy
 import warnings
 import sys
+from packaging import version
+
+from gpaw import __version__
 
 
 def getnewcalc(calc: asecalculator, txt="-"):
@@ -68,4 +71,12 @@ def resetmodecalc(calc: asecalculator, dedecut: str or float or int = None, **kw
         if mode.todict() == org_mode_dict:  # do nothing if mode is not changed
             warnings.warn("Original and updated mode were not different")
         parprint("Resetting the mode to: {}".format(mode.todict()), flush=True)
-        calc.set(mode=mode)
+        if version.parse("25.7.0") >= version.parse(__version__):
+            txt = calc.log.fd.name
+            parameters = calc.parameters
+            parprint("debug: new gpaw version", flush=True)
+            parprint("txt: {}".format(parameters.get("txt")), flush=True)
+            calc = calc.new(mode=mode, txt=txt) # create a new calculator
+            return calc
+        else:
+            calc.set(mode=mode)
