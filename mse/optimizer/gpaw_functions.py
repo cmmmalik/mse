@@ -68,13 +68,16 @@ def optimize(atoms,
         _opt_ = getattr(ase_op, relaxalgorithm)
     else:
         _opt_ = optimizer_algorithms[relaxalgorithm]
+        
+    if not steps:
+        steps = 1000_000  # a big number
 
     opargs = deepcopy(opargs) # to make sure, it does not permanently edit the **opargs outside the scope of the function
     # relaxation algorithms
     watchdb = opargs.pop("db", None)
     constraint = opargs.pop("constraint", {})
 
-    parprint("Relaxation type: {}\nMask : {}\nOther relaxation parameters {}".format(reltype, mask, opargs))
+    parprint("Relaxation type: {}\nMask : {}\nOther relaxation parameters {}".format(reltype, mask, opargs), flush=True)
 
     entity = None
     logfile = None
