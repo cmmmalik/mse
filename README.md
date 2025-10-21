@@ -1,4 +1,4 @@
-# @cmmmalik/mse - Material Simulation Environment
+# Material Simulation Environment
 
 ## Overview
 
