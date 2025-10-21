@@ -200,8 +200,10 @@ class Optimize:
             if conv:
                 return conv
 
-    def _updatemodecalc(self, dedecut, **kwargs):
-        resetmodecalc(self.atoms.calc, dedecut=dedecut, **kwargs)
+    def _updatemodecalc(self, dedecut, **kwargs):    
+        calc_ = resetmodecalc(self.atoms.calc, dedecut=dedecut, **kwargs)
+        if calc_ is not None:
+            self.atoms.calc = calc_
 
     @property
     def update_dedecut(self):
