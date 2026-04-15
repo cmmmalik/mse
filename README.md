@@ -2,7 +2,7 @@
 
 ## Overview
 
-**@cmmmalik/mse** (Material Simulation Environment) is a Python package designed to streamline, automate, and manage computational materials science workflows. It provides tools to set up, run, analyze, and optimize high-throughput simulations, primarily using electronic structure codes such as GPAW and VASP. The package is tailored for researchers working on atomistic simulations, materials discovery, and computational chemistry.
+**mse** (Material Simulation Environment) is a Python package designed to streamline, automate, and manage computational materials science workflows. It provides tools to set up, run, analyze, and optimize high-throughput simulations, primarily using electronic structure codes such as GPAW and VASP. The package is tailored for researchers working on atomistic simulations, materials discovery, and computational chemistry.
 
 ## Features
 
