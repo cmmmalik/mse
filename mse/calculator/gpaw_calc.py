@@ -254,7 +254,7 @@ class Gpaw(Gpawjob):
             try:
                 atoms = aseread(job.inputs["calc_args"]["txt"])  # reading only the last configuration
                 print("Atoms read from {} file".format(job.inputs["calc_args"]["txt"]))
-            except IOError:
+            except (IOError, ValueError):
                 print("Invalid/empty file: '{}'".format(job.inputs["calc_args"]["txt"]))
                 pass
 
