@@ -12,6 +12,9 @@ from gpaw import __version__
 
 
 def getnewcalc(calc: asecalculator, txt="-"):
+    
+    parallel = None
+    
     try:
         parameters = deepcopy(calc.parameters)
         parallel = deepcopy(calc.parallel)
