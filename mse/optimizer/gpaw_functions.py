@@ -315,7 +315,7 @@ def get_dedecut(atoms,
             calc = calc.new(mode=pw, txt="dedecut.txt")
 
 
-        ats.set_calculator(calc)
+        ats.calc = calc
         e.append(ats.get_potential_energy())
 
     dedecut = (e[1]-e[0])/(2*step)
