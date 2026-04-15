@@ -277,9 +277,11 @@ def get_dedecut(atoms,
 
     from gpaw import __version__
     
-    if version.parse("25.7.0") >= version.parse(__version__):
+    if version.parse("25.7.0") <= version.parse(__version__):
+        parprint("Detected new gpaw version: {}".format(__version__), flush=True)
         new_gpaw = True
     else:
+        parprint("Detected old gpaw version : {}".format(__version__), flush=True)
         new_gpaw = False
 
     defaultparameters = { "verbose": True,
